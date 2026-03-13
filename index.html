@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vinculum — Vortex Runner</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{overflow:hidden;background:#000;font-family:'Segoe UI',system-ui,sans-serif;user-select:none;}
+
+/* ===== SCENES ===== */
+.scene{position:fixed;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;}
+.scene.active{display:flex;}
+
+/* ===== STATION SCENE — OPTION B: Interior + Space Window ===== */
+#scene-station{
+  flex-direction:row !important;
+  background:#000;
+  align-items:stretch;
+  justify-content:flex-start;
+}
+
+/* LEFT — station interior panel */
+.station-interior{
+  width:43%;min-width:320px;max-width:540px;
+  background:linear-gradient(160deg,#08101f 0%,#0c1828 55%,#080e1c 100%);
+  border-right:1px solid rgba(79,195,247,0.1);
+  display:flex;flex-direction:column;
+  padding:18px 18px 14px;
+  overflow-y:auto;overflow-x:hidden;
+  position:relative;z-index:10;
+  scrollbar-width:none;
+}
+.station-interior::-webkit-scrollbar{display:none;}
+/* Subtle scan-line texture */
+.station-interior::before{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(79,195,247,0.012) 3px,rgba(79,195,247,0.012) 4px);
+  pointer-events:none;z-index:0;
+}
+.si-content{position:relative;z-index:1;display:flex;flex-direction:column;min-height:100%;}
+
+/* Header */
+.si-brand{color:#ab47bc;font-size:0.6em;letter-spacing:4px;text-transform:uppercase;margin-bottom:1px;}
+.si-title{color:#fff;font-size:1.5em;font-weight:800;text-shadow:0 0 22px rgba(79,195,247,0.7);letter-spacing:1px;margin-bottom:6px;}
+.si-divider{width:100%;height:1px;background:linear-gradient(90deg,rgba(79,195,247,0.35),rgba(171,71,188,0.2),transparent);margin-bottom:10px;}
+
+/* Mission status panel */
+.si-status{
+  background:rgba(79,195,247,0.04);
+  border:1px solid rgba(79,195,247,0.12);
+  border-radius:10px;padding:9px 13px;margin-bottom:10px;
+}
+.si-status-label{color:#4fc3f7;font-size:0.55em;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px;}
+.si-stat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
+.si-stat-row:last-child{margin-bottom:0;}
+.si-stat-name{color:#445;font-size:0.65em;text-transform:uppercase;letter-spacing:1px;}
+.si-stat-val{color:#fff;font-size:0.74em;font-weight:700;}
+.si-stat-val.green{color:#4caf50;}.si-stat-val.gold{color:#ffd54f;}
+
+/* Pilot selector */
+.char-select-label{color:#4fc3f7;font-size:0.6em;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;}
+.char-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:7px;
+  margin-bottom:11px;
+}
+.char-opt{
+  background:rgba(10,14,46,0.88);border:1.5px solid rgba(79,195,247,0.16);
+  border-radius:10px;cursor:pointer;transition:all 0.22s;overflow:hidden;text-align:center;
+  padding-bottom:5px;
+}
+.char-opt:hover{border-color:#4fc3f7;transform:translateY(-2px);box-shadow:0 4px 14px rgba(79,195,247,0.15);}
+.char-opt.selected{border-color:#ffd54f;box-shadow:0 0 16px rgba(255,213,79,0.35);}
+.char-opt .char-preview{width:100%;height:72px;display:block;position:relative;}
+.char-opt .char-preview canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
+.char-opt .char-name{color:#fff;font-size:0.6em;font-weight:700;padding:4px 3px 0;line-height:1.2;}
+.char-opt .char-sub{color:#555;font-size:0.54em;padding:1px 3px 0;}
+
+/* Angle picker — compact */
+.angle-card{
+  background:rgba(10,14,46,0.6);border:1.5px solid rgba(79,195,247,0.22);
+  border-radius:13px;padding:10px 12px;text-align:center;
+}
+.angle-card h3{color:#4fc3f7;font-size:0.6em;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;}
+#angle-canvas{display:block;margin:0 auto 4px;cursor:pointer;}
+.angle-display{color:#fff;font-size:1.6em;font-weight:700;margin:3px 0;}
+.angle-hint{font-size:0.68em;min-height:1em;margin-bottom:5px;transition:color 0.3s;}
+.angle-hint.good{color:#4caf50;}.angle-hint.close{color:#ffd54f;}.angle-hint.off{color:#ef5350;}
+.launch-btn{
+  width:100%;background:linear-gradient(135deg,#4fc3f7,#ab47bc);border:none;
+  border-radius:10px;padding:11px;color:#fff;font-size:0.95em;font-weight:700;
+  cursor:pointer;transition:transform 0.18s,box-shadow 0.18s;margin-top:7px;letter-spacing:1px;
+}
+.launch-btn:hover{transform:scale(1.02);box-shadow:0 0 22px rgba(79,195,247,0.4);}
+.bonus-label{color:#ffd54f;font-size:0.7em;margin-top:4px;opacity:0;transition:opacity 0.5s;min-height:1em;}
+
+/* RIGHT — space window */
+.station-window{flex:1;position:relative;overflow:hidden;}
+#station-canvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;}
+/* Mission window HUD overlays */
+.sw-label{
+  position:absolute;top:14px;left:16px;z-index:5;
+  background:rgba(0,0,0,0.5);border:1px solid rgba(79,195,247,0.28);border-radius:6px;
+  padding:4px 11px;color:#4fc3f7;font-size:0.58em;letter-spacing:2px;text-transform:uppercase;
+  backdrop-filter:blur(4px);
+}
+.sw-watermark{
+  position:absolute;bottom:14px;right:16px;z-index:5;
+  color:rgba(171,71,188,0.3);font-size:0.58em;letter-spacing:3px;text-transform:uppercase;
+  text-shadow:0 0 8px rgba(171,71,188,0.25);
+}
+
+/* ===== LAUNCH SCENE ===== */
+#scene-launch{background:#000;}
+#launch-canvas{width:100%;height:100%;position:absolute;}
+.launch-text{position:relative;z-index:10;text-align:center;}
+.launch-text h2{color:#fff;font-size:2.5em;font-weight:700;text-shadow:0 0 30px #4fc3f7;}
+.launch-text p{color:#888;font-size:1em;margin-top:10px;}
+
+/* ===== RUNNER HUD ===== */
+#runner-hud{
+  position:fixed;top:0;left:0;width:100%;padding:10px 20px;z-index:100;
+  display:none;justify-content:space-between;align-items:center;
+  background:linear-gradient(180deg,rgba(0,0,0,0.7),transparent);
+}
+.rh-item{text-align:center;}
+.rh-label{color:#556;font-size:0.6em;text-transform:uppercase;letter-spacing:2px;}
+.rh-val{color:#fff;font-size:1.15em;font-weight:700;}
+
+/* ===== VORTEX PANE MODAL ===== */
+#vortex-modal{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.88);display:none;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(6px);
+}
+.vortex-card{
+  background:linear-gradient(135deg,#0a0e2e,#1a0a2e);
+  border:2px solid rgba(171,71,188,0.5);border-radius:22px;
+  padding:32px 42px;text-align:center;max-width:480px;width:90%;
+  box-shadow:0 0 60px rgba(171,71,188,0.4);
+}
+.vc-title{color:#ab47bc;font-size:0.75em;text-transform:uppercase;letter-spacing:3px;margin-bottom:8px;}
+.vc-problem{color:#fff;font-size:3em;font-weight:700;margin:14px 0;text-shadow:0 0 20px rgba(171,71,188,0.5);}
+.vc-choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0;}
+.vc-btn{
+  background:rgba(171,71,188,0.1);border:2px solid rgba(171,71,188,0.25);
+  border-radius:12px;padding:16px;color:#fff;font-size:1.4em;font-weight:700;
+  cursor:pointer;transition:all 0.18s;
+}
+.vc-btn:hover{background:rgba(171,71,188,0.25);border-color:#ab47bc;transform:scale(1.04);}
+.vc-btn.v-correct{background:rgba(76,175,80,0.35)!important;border-color:#4caf50!important;}
+.vc-btn.v-wrong{background:rgba(244,67,54,0.35)!important;border-color:#f44336!important;}
+.vc-timer{width:100%;height:5px;background:#222;border-radius:3px;margin-top:14px;overflow:hidden;}
+.vc-timer-fill{width:100%;height:100%;background:linear-gradient(90deg,#f44336,#ffd54f,#4caf50);transition:width 0.1s linear;}
+
+/* ===== NUMBER LINE REMEDIATION ===== */
+#nl-modal{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.92);display:none;align-items:center;justify-content:center;z-index:250;backdrop-filter:blur(8px);
+}
+.nl-card{
+  background:linear-gradient(135deg,#0a1428,#1a0a30);
+  border:2px solid rgba(79,195,247,0.35);border-radius:22px;
+  padding:28px 38px;text-align:center;max-width:540px;width:92%;
+  box-shadow:0 0 50px rgba(79,195,247,0.25);
+}
+.nl-title{color:#4fc3f7;font-size:0.75em;text-transform:uppercase;letter-spacing:3px;margin-bottom:6px;}
+.nl-problem{color:#fff;font-size:1.8em;font-weight:700;margin-bottom:8px;}
+.nl-instr{color:#aaa;font-size:0.85em;margin-bottom:16px;}
+
+/* Number line */
+.nl-track-wrap{position:relative;height:90px;margin:10px 15px 38px;overflow:visible;}
+.nl-track{position:absolute;top:48px;left:0;right:0;height:4px;background:rgba(255,255,255,0.12);border-radius:2px;overflow:visible;}
+.nl-tick{position:absolute;top:20px;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.nl-tick-line{width:2px;height:10px;background:rgba(255,255,255,0.2);margin:0 auto;}
+.nl-tick-label{color:#777;font-size:0.65em;transform:translateX(-50%);}
+.nl-dot{position:absolute;top:-6px;width:16px;height:16px;border-radius:50%;background:#4fc3f7;transform:translateX(-50%);box-shadow:0 0 10px rgba(79,195,247,0.6);transition:left 0.4s cubic-bezier(0.25,0.46,0.45,0.94);z-index:5;}
+.nl-arch{position:absolute;top:0;border-top:3px dashed;border-radius:50% 50% 0 0;pointer-events:none;overflow:visible;}
+.nl-arch-label{position:absolute;font-size:0.7em;font-weight:800;transform:translateX(-50%);pointer-events:none;}
+
+/* Keypad */
+.nl-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:200px;margin:10px auto 0;}
+.nl-kp-btn{background:rgba(79,195,247,0.08);border:2px solid rgba(79,195,247,0.2);border-radius:10px;padding:10px;color:#fff;font-size:1.1em;font-weight:600;cursor:pointer;transition:all 0.12s;}
+.nl-kp-btn:hover{background:rgba(79,195,247,0.2);border-color:#4fc3f7;}
+.nl-kp-btn:active{transform:scale(0.92);}
+.nl-kp-enter{background:rgba(76,175,80,0.15);border-color:rgba(76,175,80,0.3);color:#66bb6a;}
+.nl-kp-clear{background:rgba(244,67,54,0.1);border-color:rgba(244,67,54,0.25);color:#ef5350;font-size:0.85em;}
+
+.nl-kp-display{background:rgba(0,0,0,0.4);border:2px solid rgba(79,195,247,0.2);border-radius:10px;padding:8px 16px;color:#4fc3f7;font-size:1.6em;font-weight:700;min-height:48px;display:flex;align-items:center;justify-content:center;margin:8px auto;max-width:200px;}
+.nl-kp-display.nl-wrong{border-color:#f44336;color:#f44336;animation:shake 0.4s;}
+.nl-kp-display.nl-right{border-color:#4caf50;color:#4caf50;}
+.nl-running-total{color:#fff;font-size:1.6em;font-weight:700;margin:8px 0;transition:color 0.3s;}
+.nl-step-label{color:#888;font-size:0.8em;min-height:1.1em;margin-bottom:6px;}
+.nl-continue-btn{background:linear-gradient(135deg,#4fc3f7,#1976d2);border:none;border-radius:10px;padding:10px 28px;color:#fff;font-size:0.95em;font-weight:700;cursor:pointer;margin-top:8px;display:none;}
+.nl-continue-btn:hover{opacity:0.9;}
+
+/* ===== GAME OVER ===== */
+#scene-gameover{background:radial-gradient(ellipse at center,#0a0e2e,#000);}
+#go-canvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;}
+.go-ui{position:relative;z-index:10;text-align:center;}
+.go-brand{color:#ab47bc;font-size:0.75em;letter-spacing:4px;text-transform:uppercase;margin-bottom:6px;}
+.go-title{color:#fff;font-size:2.4em;font-weight:700;text-shadow:0 0 30px #ffd54f;margin-bottom:16px;}
+.go-stats{background:rgba(10,14,46,0.85);border:1px solid rgba(79,195,247,0.2);border-radius:16px;padding:20px 35px;margin:0 auto 20px;min-width:300px;backdrop-filter:blur(6px);}
+.go-stat-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.go-stat-row:last-child{border:none;}
+.go-stat-label{color:#888;font-size:0.85em;}
+.go-stat-val{color:#4fc3f7;font-size:0.95em;font-weight:700;}
+.go-stat-val.gold{color:#ffd54f;}.go-stat-val.green{color:#66bb6a;}
+.relaunch-btn{background:linear-gradient(135deg,#4fc3f7,#ab47bc);border:none;border-radius:14px;padding:16px 50px;color:#fff;font-size:1.2em;font-weight:700;cursor:pointer;transition:transform 0.2s;}
+.relaunch-btn:hover{transform:scale(1.06);}
+.go-sub{color:#666;font-size:0.8em;margin-top:10px;}
+.go-skin-badge{background:rgba(255,213,79,0.15);border:1px solid rgba(255,213,79,0.3);border-radius:10px;padding:8px 18px;color:#ffd54f;font-size:0.8em;margin-bottom:14px;display:none;}
+
+/* ===== FEEDBACK ===== */
+.fb{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:3em;font-weight:900;z-index:350;pointer-events:none;animation:fbA 0.9s ease-out forwards;}
+.fb-g{color:#4caf50;text-shadow:0 0 30px rgba(76,175,80,0.5);}
+.fb-r{color:#ff7043;text-shadow:0 0 30px rgba(255,112,67,0.5);}
+.fb-y{color:#ffd54f;text-shadow:0 0 30px rgba(255,213,79,0.5);}
+@keyframes fbA{0%{transform:translate(-50%,-50%) scale(0.5);opacity:0;}25%{transform:translate(-50%,-50%) scale(1.15);opacity:1;}100%{transform:translate(-50%,-50%) scale(1) translateY(-35px);opacity:0;}}
+
+.confetti{position:fixed;width:8px;height:8px;z-index:400;pointer-events:none;border-radius:2px;animation:cF 2s linear forwards;}
+@keyframes cF{0%{opacity:1;transform:translateY(0) rotate(0);}100%{opacity:0;transform:translateY(100vh) rotate(720deg);}}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}}
+
+/* Mobile arrow controls */
+#touch-controls{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:none;gap:12px;z-index:150;}
+.tc-btn{background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.2);border-radius:12px;padding:14px 28px;color:#fff;font-size:1.4em;cursor:pointer;user-select:none;}
+</style>
+</head>
+<body>
+
+<!-- STATION SCENE — Option B: Interior left + Space window right -->
+<div class="scene active" id="scene-station">
+
+  <!-- LEFT: Station Interior -->
+  <div class="station-interior">
+    <div class="si-content">
+      <!-- Header -->
+      <div class="si-brand">Vinculum Math Solutions</div>
+      <div class="si-title">Space Station α</div>
+      <div class="si-divider"></div>
+
+      <!-- Mission Status panel -->
+      <div class="si-status">
+        <div class="si-status-label">Mission Status</div>
+        <div class="si-stat-row">
+          <span class="si-stat-name">Status</span>
+          <span class="si-stat-val green" id="si-status-val">● Ready for Launch</span>
+        </div>
+        <div class="si-stat-row">
+          <span class="si-stat-name">Best Streak</span>
+          <span class="si-stat-val gold" id="si-best-streak">—</span>
+        </div>
+        <div class="si-stat-row">
+          <span class="si-stat-name">Missions Flown</span>
+          <span class="si-stat-val" id="si-missions">0</span>
+        </div>
+      </div>
+
+      <!-- Pilot Select -->
+      <div class="char-select-label">Select Pilot</div>
+      <div class="char-grid" id="char-grid"></div>
+
+      <!-- Angle Card -->
+      <div class="angle-card">
+        <h3>Set Launch Angle — Aim at the Planet</h3>
+        <canvas id="angle-canvas" width="240" height="130"></canvas>
+        <div class="angle-display"><span id="angle-val">0</span>°</div>
+        <div class="angle-hint off" id="angle-hint">Drag the glowing dot to aim</div>
+        <div class="bonus-label" id="bonus-label">🎯 Bonus Trajectory!</div>
+        <button class="launch-btn" id="launch-btn">🚀 LAUNCH MISSION</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Space Window -->
+  <div class="station-window">
+    <canvas id="station-canvas"></canvas>
+    <div class="sw-label">▸ MISSION WINDOW</div>
+    <div class="sw-watermark">Vinculum</div>
+  </div>
+
+</div>
+
+<!-- LAUNCH SCENE -->
+<div class="scene" id="scene-launch">
+  <canvas id="launch-canvas"></canvas>
+  <div class="launch-text">
+    <h2 id="launch-heading">Launching...</h2>
+    <p id="launch-sub">Entering the Vortex Field</p>
+  </div>
+</div>
+
+<!-- RUNNER SCENE (Three.js) -->
+<div class="scene" id="scene-runner">
+  <!-- Three.js renderer fills here -->
+</div>
+
+<!-- GAME OVER SCENE -->
+<div class="scene" id="scene-gameover">
+  <canvas id="go-canvas"></canvas>
+  <div class="go-ui">
+    <div class="go-brand">Vinculum Math Solutions</div>
+    <div class="go-title">Mission Complete!</div>
+    <div class="go-skin-badge" id="go-skin-badge">✨ Bonus Skin Unlocked!</div>
+    <div class="go-stats" id="go-stats"></div>
+    <button class="relaunch-btn" id="relaunch-btn">RELAUNCH MISSION</button>
+    <div class="go-sub">Return to Station Alpha for another attempt</div>
+  </div>
+</div>
+
+<!-- RUNNER HUD -->
+<div id="runner-hud">
+  <div class="rh-item"><div class="rh-label">Score</div><div class="rh-val" style="color:#ffd54f;" id="rh-score">0</div></div>
+  <div class="rh-item"><div class="rh-label">Streak</div><div class="rh-val" style="color:#ff7043;" id="rh-streak">0</div></div>
+  <div class="rh-item"><div class="rh-label" style="font-size:0.75em;">TIME</div><div class="rh-val" style="color:#4fc3f7;font-size:1.4em;" id="rh-timer">3:00</div></div>
+  <div class="rh-item"><div class="rh-label">Vortexes</div><div class="rh-val" style="color:#ab47bc;" id="rh-vortex">0</div></div>
+</div>
+
+<!-- VORTEX MODAL -->
+<div id="vortex-modal">
+  <div class="vortex-card">
+    <div class="vc-title">Vortex Pane Challenge</div>
+    <div class="vc-problem" id="vc-problem"></div>
+    <div class="vc-choices" id="vc-choices"></div>
+    <div class="vc-timer"><div class="vc-timer-fill" id="vc-timer-fill"></div></div>
+  </div>
+</div>
+
+<!-- NUMBER LINE REMEDIATION -->
+<div id="nl-modal">
+  <div class="nl-card">
+    <div class="nl-title">Number Line Station</div>
+    <div class="nl-problem" id="nl-problem"></div>
+    <div class="nl-instr" id="nl-instr"></div>
+    <div class="nl-track-wrap" id="nl-track-wrap">
+      <div class="nl-track" id="nl-track"></div>
+      <div class="nl-dot" id="nl-dot"></div>
+    </div>
+    <div class="nl-running-total" id="nl-running-total"></div>
+    <div class="nl-step-label" id="nl-step-label"></div>
+    <div class="nl-kp-display" id="nl-kp-display">_</div>
+    <div class="nl-keypad" id="nl-keypad"></div>
+    <button class="nl-continue-btn" id="nl-continue-btn">Continue Mission</button>
+  </div>
+</div>
+
+<div id="touch-controls">
+  <div class="tc-btn" id="tc-left">◀</div>
+  <div class="tc-btn" id="tc-right">▶</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+// ─────────────────────────────────────────────
+//  MATH PROBLEM GENERATOR  (Addition + Subtraction, grades 3-8 range)
+// ─────────────────────────────────────────────
+function R(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+const LEVELS=[
+  {gen:()=>{const a=R(1,9),b=R(1,9);return{q:`${a} + ${b}`,ans:a+b,op:'+',a,b};}},
+  {gen:()=>{const a=R(10,30),b=R(2,9);return{q:`${a} + ${b}`,ans:a+b,op:'+',a,b};}},
+  {gen:()=>{const a=R(15,99),b=R(5,30);return{q:`${a} + ${b}`,ans:a+b,op:'+',a,b};}},
+  {gen:()=>{const a=R(20,80),b=R(5,a-5);return{q:`${a} - ${b}`,ans:a-b,op:'-',a,b};}},
+  {gen:()=>{const a=R(50,200),b=R(10,50);return{q:`${a} + ${b}`,ans:a+b,op:'+',a,b};}},
+  {gen:()=>{const a=R(100,300),b=R(20,a-20);return{q:`${a} - ${b}`,ans:a-b,op:'-',a,b};}},
+];
+
+// ─────────────────────────────────────────────
+//  GAME STATE
+// ─────────────────────────────────────────────
+let state={
+  scene:'station',
+  launchAngle:0,
+  targetAngle:R(20,160), // random planet position — changes every game
+  bonusSkin:false,
+  unlockedSkins:[],
+  missions:0,
+  selectedChar:0, // 0=Spartan 1=Classic 2=Neon
+  score:0,streak:0,bestStreak:0,
+  vortexHit:0,correct:0,wrong:0,
+  timeLeft:180,
+  gameLevel:0,
+  currentProb:null,
+  modalOpen:false,
+  running:false
+};
+// Bonus zone is ±8° around state.targetAngle — computed dynamically
+// Character definitions (used for 2D preview + 3D build)
+// 8 full character definitions — matches astronaut-designs.html
+const CHAR_DEFS=[
+  {name:'Spartan Scholar',sub:'Math Warrior',body:'#800020',visor:'#4fc3f7',accent:'#CCAA00',
+   bodyColor:0x800020,visorColor:0x4fc3f7,accentColor:0xCCAA00,
+   hasJetpack:true,hasRings:false,hasAntenna:false,hasCape:false,hasHelmetDecor:false,emissive:0x220008,type:'spartan'},
+  {name:'Classic Astronaut',sub:'The Explorer',body:'#eeeeee',visor:'#4fc3f7',accent:'#888899',
+   bodyColor:0xeeeeee,visorColor:0x4fc3f7,accentColor:0x888899,
+   hasJetpack:true,hasRings:false,hasAntenna:false,hasCape:false,hasHelmetDecor:false,emissive:0x111122,type:'astro'},
+  {name:'Neon Explorer',sub:'Futuristic',body:'#222233',visor:'#00ff88',accent:'#00ff88',
+   bodyColor:0x222233,visorColor:0x00ff88,accentColor:0x00ff88,
+   hasJetpack:true,hasRings:false,hasAntenna:true,hasCape:false,hasHelmetDecor:false,emissive:0x003322,glowLimbs:true,type:'neon'},
+  {name:'Rainbow Ranger',sub:'Fun & Colorful',body:'#ff6b9d',visor:'#ffd54f',accent:'#9c27b0',
+   bodyColor:0xff6b9d,visorColor:0xffd54f,accentColor:0x9c27b0,
+   hasJetpack:false,hasRings:true,hasAntenna:false,hasCape:true,hasHelmetDecor:false,emissive:0x220011,type:'astro'},
+  {name:'Robo-Naut',sub:'Tech Lover',body:'#607d8b',visor:'#ff5722',accent:'#37474f',
+   bodyColor:0x607d8b,visorColor:0xff5722,accentColor:0x37474f,
+   hasJetpack:true,hasRings:false,hasAntenna:true,hasCape:false,hasHelmetDecor:true,emissive:0x112233,type:'astro'},
+  {name:'Star Cadet',sub:'Achievement',body:'#1a237e',visor:'#4fc3f7',accent:'#ffd54f',
+   bodyColor:0x1a237e,visorColor:0x4fc3f7,accentColor:0xffd54f,
+   hasJetpack:true,hasRings:false,hasAntenna:false,hasCape:false,hasHelmetDecor:true,emissive:0x0a1040,type:'astro'},
+  {name:'Stealth Pilot',sub:'Dark & Sleek',body:'#1a1a2e',visor:'#ab47bc',accent:'#7b1fa2',
+   bodyColor:0x1a1a2e,visorColor:0xab47bc,accentColor:0x7b1fa2,
+   hasJetpack:true,hasRings:false,hasAntenna:false,hasCape:true,hasHelmetDecor:false,emissive:0x110022,glowLimbs:true,type:'neon'},
+  {name:'Solar Guardian',sub:'Warm Energy',body:'#ff8f00',visor:'#fff176',accent:'#ffab00',
+   bodyColor:0xff8f00,visorColor:0xfff176,accentColor:0xffab00,
+   hasJetpack:true,hasRings:true,hasAntenna:false,hasCape:false,hasHelmetDecor:true,emissive:0x331100,type:'astro'},
+];
+
+// ─────────────────────────────────────────────
+//  SCENE MANAGER
+// ─────────────────────────────────────────────
+function showScene(name){
+  document.querySelectorAll('.scene').forEach(s=>s.classList.remove('active'));
+  document.getElementById('scene-'+name).classList.add('active');
+  document.getElementById('runner-hud').style.display=name==='runner'?'flex':'none';
+  state.scene=name;
+  // Update station interior stats panel whenever we return to station
+  if(name==='station'){
+    const best=document.getElementById('si-best-streak');
+    const mFlown=document.getElementById('si-missions');
+    const sv=document.getElementById('si-status-val');
+    if(best)best.textContent=state.bestStreak>0?'🔥 '+state.bestStreak:'—';
+    if(mFlown)mFlown.textContent=state.missions||0;
+    if(sv){sv.textContent=state.missions>0?'● Returning Pilot':'● Ready for Launch';}
+  }
+  if(name==='runner'){document.getElementById('touch-controls').style.display='flex';}
+  else{document.getElementById('touch-controls').style.display='none';}
+}
+
+// ─────────────────────────────────────────────
+//  STATION 3D BACKGROUND
+// ─────────────────────────────────────────────
+(function buildStationBg(){
+  const canvas=document.getElementById('station-canvas');
+  const ren=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  ren.setPixelRatio(Math.min(devicePixelRatio,2));
+  // Size to the right panel (.station-window), not full screen
+  function getWinSize(){
+    const p=canvas.parentElement;
+    return{w:p&&p.offsetWidth>10?p.offsetWidth:Math.round(innerWidth*0.57),
+           h:p&&p.offsetHeight>10?p.offsetHeight:innerHeight};
+  }
+  const ws0=getWinSize();
+  const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(72,ws0.w/ws0.h,0.1,3000);
+  cam.position.set(0,18,130);
+  ren.setSize(ws0.w,ws0.h);
+
+  // Stars
+  const n=2000,g=new THREE.BufferGeometry(),p=new Float32Array(n*3),c=new Float32Array(n*3);
+  for(let i=0;i<n;i++){const r=300+Math.random()*1500,t=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1);
+  p[i*3]=r*Math.sin(ph)*Math.cos(t);p[i*3+1]=r*Math.sin(ph)*Math.sin(t);p[i*3+2]=r*Math.cos(ph);
+  const cl=new THREE.Color().setHSL(0.58+Math.random()*0.1,0.3,0.7+Math.random()*0.3);c[i*3]=cl.r;c[i*3+1]=cl.g;c[i*3+2]=cl.b;}
+  g.setAttribute('position',new THREE.BufferAttribute(p,3));g.setAttribute('color',new THREE.BufferAttribute(c,3));
+  sc.add(new THREE.Points(g,new THREE.PointsMaterial({size:1.8,vertexColors:true,transparent:true,opacity:0.85,sizeAttenuation:true})));
+
+  // Space Station structure
+  const station=new THREE.Group();
+  // Main hub
+  const hub=new THREE.Mesh(new THREE.CylinderGeometry(8,8,18,12),new THREE.MeshPhongMaterial({color:0x778899,emissive:0x112233}));
+  station.add(hub);
+  // Docking rings
+  [0,10,-10].forEach(y=>{const r=new THREE.Mesh(new THREE.TorusGeometry(10,0.8,8,24),new THREE.MeshPhongMaterial({color:0x4fc3f7,emissive:0x1a4466}));r.position.y=y;r.rotation.x=Math.PI/2;station.add(r);});
+  // Solar panels
+  [-1,1].forEach(side=>{
+    const arm=new THREE.Mesh(new THREE.BoxGeometry(30,0.5,1.5),new THREE.MeshPhongMaterial({color:0x888899}));arm.position.set(side*25,0,0);station.add(arm);
+    const panel=new THREE.Mesh(new THREE.BoxGeometry(20,12,0.3),new THREE.MeshPhongMaterial({color:0x1a237e,emissive:0x0a1240}));panel.position.set(side*35,0,0);station.add(panel);
+    // Panel grid lines
+    for(let i=-2;i<=2;i++){const l=new THREE.Mesh(new THREE.BoxGeometry(20,0.15,0.35),new THREE.MeshBasicMaterial({color:0x3949ab}));l.position.set(side*35,i*2.2,0.18);station.add(l);}
+  });
+  // Viewing dome
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(5,16,8,0,Math.PI*2,0,Math.PI/2),new THREE.MeshPhongMaterial({color:0x4fc3f7,transparent:true,opacity:0.3,specular:0xffffff,shininess:120}));
+  dome.position.y=9;station.add(dome);
+  // Antenna
+  const ant=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.15,12,8),new THREE.MeshPhongMaterial({color:0xcccccc}));ant.position.set(0,15,0);station.add(ant);
+  const antTip=new THREE.Mesh(new THREE.SphereGeometry(0.6,8,8),new THREE.MeshBasicMaterial({color:0xff4444}));antTip.position.set(0,21,0);station.add(antTip);
+  // Thruster nozzles
+  for(let i=0;i<4;i++){const t=new THREE.Mesh(new THREE.CylinderGeometry(1.5,2,3,8),new THREE.MeshPhongMaterial({color:0x444455}));t.position.set(Math.cos(i*Math.PI/2)*9,-10,Math.sin(i*Math.PI/2)*9);station.add(t);}
+
+  // Push the decorative station to upper-left, small and out of way
+  station.position.set(-55,30,-80);station.scale.setScalar(0.5);sc.add(station);
+
+  // ── EARTH — large, lower-right, clearly visible behind the UI ──
+  const EARTH_POS=new THREE.Vector3(110,-55,-180);
+  const earth=new THREE.Mesh(new THREE.SphereGeometry(95,64,64),new THREE.MeshPhongMaterial({color:0x1a3a8f,emissive:0x0a1a44,shininess:30}));
+  earth.position.copy(EARTH_POS);sc.add(earth);
+  // Continents (random land patches)
+  const landSeeds=[
+    [0.3,1.2,0.6,0.9],[1.8,0.4,0.7,0.7],[4.0,0.8,0.5,0.8],
+    [2.5,1.5,0.55,0.6],[5.0,0.3,0.8,0.7],[0.9,2.1,0.4,0.5]
+  ];
+  landSeeds.forEach(([ph,th,ps,ts])=>{
+    const land=new THREE.Mesh(
+      new THREE.SphereGeometry(95.4,12,12,ph,ps+0.3,th*0.4,ts*0.5),
+      new THREE.MeshPhongMaterial({color:0x2e7d32,emissive:0x0a2010,shininess:5})
+    );land.position.copy(EARTH_POS);sc.add(land);
+  });
+  // Atmosphere glow
+  const atmos=new THREE.Mesh(new THREE.SphereGeometry(100,48,48),new THREE.MeshPhongMaterial({color:0x4488ff,transparent:true,opacity:0.12,side:THREE.BackSide}));
+  atmos.position.copy(EARTH_POS);sc.add(atmos);
+  // Thin atmosphere rim
+  const rim=new THREE.Mesh(new THREE.SphereGeometry(97,48,48),new THREE.MeshPhongMaterial({color:0x88ccff,transparent:true,opacity:0.06,side:THREE.FrontSide}));
+  rim.position.copy(EARTH_POS);sc.add(rim);
+
+  // ── ORBITING MINI SPACE STATION around Earth ──
+  const miniSta=new THREE.Group();
+  // Hub
+  const mHub=new THREE.Mesh(new THREE.CylinderGeometry(2.5,2.5,5,10),new THREE.MeshPhongMaterial({color:0x8899aa,emissive:0x223344}));miniSta.add(mHub);
+  // Docking ring
+  const mRing=new THREE.Mesh(new THREE.TorusGeometry(3.2,0.3,8,20),new THREE.MeshPhongMaterial({color:0x4fc3f7,emissive:0x1a4466}));mRing.rotation.x=Math.PI/2;miniSta.add(mRing);
+  // Solar panels
+  [-1,1].forEach(side=>{
+    const arm=new THREE.Mesh(new THREE.BoxGeometry(9,0.2,0.5),new THREE.MeshPhongMaterial({color:0x778899}));arm.position.set(side*7,0,0);miniSta.add(arm);
+    const pan=new THREE.Mesh(new THREE.BoxGeometry(6,4,0.1),new THREE.MeshPhongMaterial({color:0x1a237e,emissive:0x0a1240}));pan.position.set(side*11,0,0);miniSta.add(pan);
+    // Grid on panels
+    for(let i=-1;i<=1;i++){const gl=new THREE.Mesh(new THREE.BoxGeometry(6,0.08,0.12),new THREE.MeshBasicMaterial({color:0x3949ab}));gl.position.set(side*11,i*1.3,0.07);miniSta.add(gl);}
+  });
+  // Blinking antenna tip
+  const mTip=new THREE.Mesh(new THREE.SphereGeometry(0.25,8,8),new THREE.MeshBasicMaterial({color:0xff4444}));mTip.position.set(0,3.5,0);miniSta.add(mTip);
+
+  // Orbit pivot (station orbits around Earth at a radius of 130 units)
+  const orbitPivot=new THREE.Group();
+  orbitPivot.position.copy(EARTH_POS);
+  miniSta.position.set(130,0,0);
+  miniSta.scale.setScalar(1.6);
+  orbitPivot.add(miniSta);
+  sc.add(orbitPivot);
+
+  // Orbit ring (visual path) — thin torus around Earth
+  const orbitRing=new THREE.Mesh(
+    new THREE.TorusGeometry(130,0.4,8,120),
+    new THREE.MeshBasicMaterial({color:0x4fc3f7,transparent:true,opacity:0.18})
+  );
+  orbitRing.position.copy(EARTH_POS);orbitRing.rotation.x=Math.PI*0.18;sc.add(orbitRing);
+
+  // ── MOON — upper-left, clearly visible ──
+  const MOON_POS=new THREE.Vector3(-200,100,-350);
+  const moon=new THREE.Mesh(new THREE.SphereGeometry(28,32,32),new THREE.MeshPhongMaterial({color:0xccccbb,emissive:0x161616,shininess:5}));
+  moon.position.copy(MOON_POS);sc.add(moon);
+  // Craters
+  [[0.4,0.6,3.5],[1.8,1.1,2.2],[3.5,0.8,4.0],[5.2,1.4,1.8],[2.2,0.3,2.8]].forEach(([ph,th,r])=>{
+    const crater=new THREE.Mesh(new THREE.CircleGeometry(r,12),new THREE.MeshPhongMaterial({color:0xaaaaaa,emissive:0x111111}));
+    crater.position.set(
+      MOON_POS.x+Math.sin(th)*Math.cos(ph)*28.1,
+      MOON_POS.y+Math.sin(th)*Math.sin(ph)*28.1,
+      MOON_POS.z+Math.cos(th)*28.1
+    );
+    crater.lookAt(MOON_POS);sc.add(crater);
+  });
+
+  // Lighting
+  const sun=new THREE.DirectionalLight(0xffeedd,1.3);sun.position.set(400,200,200);sc.add(sun);
+  sc.add(new THREE.AmbientLight(0x334455,0.55));
+  const stationLight=new THREE.PointLight(0x4fc3f7,0.5,200);stationLight.position.set(-55,30,-80);sc.add(stationLight);
+  // Subtle glow on earth
+  const earthGlow=new THREE.PointLight(0x2244ff,0.3,300);earthGlow.position.copy(EARTH_POS);sc.add(earthGlow);
+
+  const clk=new THREE.Clock();
+  function anim(){if(state.scene!=='station'&&state.scene!=='gameover')return;requestAnimationFrame(anim);
+  const t=clk.getElapsedTime();
+  // Decorative station (upper-left)
+  station.rotation.y=t*0.05;
+  antTip.material.opacity=0.5+Math.sin(t*3)*0.5;
+  // Earth rotation
+  earth.rotation.y=t*0.008;
+  // Orbiting mini station — tilted orbit plane for realism
+  orbitPivot.rotation.y=t*0.25;
+  orbitPivot.rotation.x=Math.sin(t*0.02)*0.05+0.18; // slight wobble
+  mTip.material.opacity=0.4+Math.sin(t*4)*0.6;      // blink
+  miniSta.rotation.z=t*0.3;                           // gentle roll
+  // Moon slow drift
+  moon.rotation.y=t*0.005;
+  // Gentle camera breathe — pulls back to see more of the scene
+  cam.position.x=Math.sin(t*0.04)*10;cam.position.y=18+Math.sin(t*0.03)*5;
+  cam.position.z=130+Math.sin(t*0.025)*10;
+  cam.lookAt(20,-10,-80);
+  ren.render(sc,cam);}
+  anim();
+  window.addEventListener('resize',()=>{const ws=getWinSize();cam.aspect=ws.w/ws.h;cam.updateProjectionMatrix();ren.setSize(ws.w,ws.h);});
+})();
+
+// ─────────────────────────────────────────────
+//  CHARACTER SELECT  (8 characters, 3D live mini-scenes)
+// ─────────────────────────────────────────────
+(function buildCharSelect(){
+  const grid=document.getElementById('char-grid');
+
+  function create3DPreview(container, def, idx){
+    const W=130,H=120;
+    const sc=new THREE.Scene();
+    const cam=new THREE.PerspectiveCamera(52,W/H,0.1,100);
+    cam.position.set(0,1.2,6);
+    const ren=new THREE.WebGLRenderer({antialias:true,alpha:true});
+    ren.setSize(W,H);ren.setPixelRatio(Math.min(devicePixelRatio,2));
+    ren.setClearColor(0x05081a,1);
+    container.appendChild(ren.domElement);
+
+    // Stars
+    const sG=new THREE.BufferGeometry(),sP=new Float32Array(300*3);
+    for(let i=0;i<300;i++){sP[i*3]=(Math.random()-0.5)*40;sP[i*3+1]=(Math.random()-0.5)*40;sP[i*3+2]=-10-Math.random()*20;}
+    sG.setAttribute('position',new THREE.BufferAttribute(sP,3));
+    sc.add(new THREE.Points(sG,new THREE.PointsMaterial({color:0xffffff,size:0.07,sizeAttenuation:true})));
+
+    // Lighting
+    const dl=new THREE.DirectionalLight(0xffeedd,0.9);dl.position.set(3,5,5);sc.add(dl);
+    sc.add(new THREE.AmbientLight(0x334455,0.6));
+    const rim=new THREE.DirectionalLight(0x4fc3f7,0.35);rim.position.set(-3,0,-3);sc.add(rim);
+
+    // Build astronaut using def properties
+    const astro=new THREE.Group();
+    const bMat=new THREE.MeshPhongMaterial({color:def.bodyColor,emissive:def.emissive||0x111111,specular:0x333333,shininess:30});
+
+    // Body oval
+    const body=new THREE.Mesh(new THREE.SphereGeometry(1,20,20),bMat);body.scale.set(0.8,1.2,0.7);astro.add(body);
+    // Visor
+    const visor=new THREE.Mesh(new THREE.SphereGeometry(0.55,16,16),new THREE.MeshPhongMaterial({color:def.visorColor,emissive:new THREE.Color(def.visorColor).multiplyScalar(0.4),transparent:true,opacity:0.75,specular:0xffffff,shininess:100}));visor.position.set(0,0.7,0.3);astro.add(visor);
+    // Helmet ring
+    const hr=new THREE.Mesh(new THREE.TorusGeometry(0.58,0.06,8,24),new THREE.MeshPhongMaterial({color:def.accentColor}));hr.position.copy(visor.position);hr.rotation.x=Math.PI/2;astro.add(hr);
+    // Arms
+    [-1,1].forEach(s=>{
+      const aMat=def.glowLimbs?new THREE.MeshPhongMaterial({color:def.accentColor,emissive:new THREE.Color(def.accentColor).multiplyScalar(0.4)}):bMat.clone();
+      const arm=new THREE.Mesh(new THREE.SphereGeometry(0.2,10,10),aMat);arm.scale.set(0.5,2.5,0.5);arm.position.set(s*0.9,0,0);arm.rotation.z=s*0.3;arm.name=s===-1?'lA':'rA';astro.add(arm);
+    });
+    // Legs
+    [-1,1].forEach(s=>{
+      const leg=new THREE.Mesh(new THREE.SphereGeometry(0.22,10,10),bMat.clone());leg.scale.set(0.5,2.8,0.5);leg.position.set(s*0.35,-1.5,0);leg.name=s===-1?'lL':'rL';astro.add(leg);
+    });
+    // Jetpack
+    if(def.hasJetpack){
+      const pk=new THREE.Mesh(new THREE.BoxGeometry(0.6,0.8,0.4),new THREE.MeshPhongMaterial({color:def.accentColor}));pk.position.set(0,0.1,-0.6);astro.add(pk);
+      [-0.15,0.15].forEach(x=>{const f=new THREE.Mesh(new THREE.ConeGeometry(0.12,0.5,8),new THREE.MeshBasicMaterial({color:0xff6600,transparent:true,opacity:0.7}));f.position.set(x,-0.2,-0.85);f.rotation.x=Math.PI;f.name='flame';astro.add(f);});
+    }
+    // Energy rings
+    if(def.hasRings){[0.3,-0.1,-0.5].forEach((y,ri)=>{const rn=new THREE.Mesh(new THREE.TorusGeometry(1.1-ri*0.05,0.02,8,32),new THREE.MeshBasicMaterial({color:def.accentColor,transparent:true,opacity:0.4}));rn.position.y=y;rn.rotation.x=Math.PI/2;rn.name='orb'+ri;astro.add(rn);});}
+    // Antenna
+    if(def.hasAntenna){const ant=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.6),new THREE.MeshPhongMaterial({color:def.accentColor}));ant.position.set(0.2,1.3,0.1);astro.add(ant);const tip=new THREE.Mesh(new THREE.SphereGeometry(0.08,8,8),new THREE.MeshBasicMaterial({color:def.accentColor}));tip.position.set(0.2,1.65,0.1);tip.name='tip';astro.add(tip);}
+    // Cape
+    if(def.hasCape){const cape=new THREE.Mesh(new THREE.PlaneGeometry(1.2,1.8),new THREE.MeshPhongMaterial({color:def.accentColor,side:THREE.DoubleSide,transparent:true,opacity:0.7}));cape.position.set(0,-0.3,-0.65);cape.rotation.x=0.15;cape.name='cape';astro.add(cape);}
+    // Cat ears
+    if(def.hasHelmetDecor==='ears'){[-1,1].forEach(s=>{const ear=new THREE.Mesh(new THREE.ConeGeometry(0.2,0.35,4),new THREE.MeshPhongMaterial({color:def.accentColor}));ear.position.set(s*0.35,1.15,0.2);ear.rotation.z=s*0.2;astro.add(ear);});}
+    else if(def.hasHelmetDecor){const st=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.4,0.6),new THREE.MeshPhongMaterial({color:def.accentColor,emissive:new THREE.Color(def.accentColor).multiplyScalar(0.3)}));st.position.set(0,1.05,0.25);astro.add(st);}
+
+    // Spartan crest for Spartan Scholar (idx 0)
+    if(idx===0){
+      const crest=new THREE.Mesh(new THREE.BoxGeometry(0.09,0.45,0.75),new THREE.MeshPhongMaterial({color:0x800020,emissive:0x330008}));crest.position.set(0,2.0,0);astro.add(crest);
+    }
+
+    astro.scale.set(1.3,1.3,1.3);
+    sc.add(astro);
+
+    // Drag to rotate
+    let drag=false,px=0,moved=false;
+    ren.domElement.addEventListener('mousedown',e=>{drag=true;moved=false;px=e.clientX;});
+    ren.domElement.addEventListener('mouseup',()=>{drag=false;});
+    ren.domElement.addEventListener('mouseleave',()=>drag=false);
+    ren.domElement.addEventListener('mousemove',e=>{if(drag){if(Math.abs(e.clientX-px)>3)moved=true;astro.rotation.y+=(e.clientX-px)*0.012;px=e.clientX;}});
+    // Click passthrough — select this card even when canvas absorbs the event
+    ren.domElement.addEventListener('click',()=>{
+      if(moved){moved=false;return;} // ignore drag-end clicks
+      document.querySelectorAll('.char-opt').forEach(o=>o.classList.remove('selected'));
+      container.parentElement.classList.add('selected');
+      state.selectedChar=idx;
+    });
+    ren.domElement.addEventListener('touchstart',e=>{drag=true;moved=false;px=e.touches[0].clientX;},{passive:true});
+    ren.domElement.addEventListener('touchend',()=>{drag=false;});
+    ren.domElement.addEventListener('touchmove',e=>{if(drag){if(Math.abs(e.touches[0].clientX-px)>3)moved=true;astro.rotation.y+=(e.touches[0].clientX-px)*0.012;px=e.touches[0].clientX;}},{passive:true});
+
+    // Animate
+    (function anim(){
+      requestAnimationFrame(anim);
+      if(state.scene!=='station')return;
+      const t=Date.now()*0.001;
+      astro.position.y=Math.sin(t*0.9)*0.25;
+      if(!drag)astro.rotation.y+=0.007;
+      astro.children.forEach(c=>{
+        if(c.name==='lA')c.rotation.x=Math.sin(t*2)*0.3;
+        if(c.name==='rA')c.rotation.x=Math.sin(t*2+Math.PI)*0.3;
+        if(c.name==='lL')c.rotation.x=Math.sin(t*1.5)*0.15;
+        if(c.name==='rL')c.rotation.x=Math.sin(t*1.5+Math.PI)*0.15;
+        if(c.name==='flame')c.material.opacity=0.4+Math.sin(t*14)*0.3;
+        if(c.name&&c.name.startsWith('orb'))c.rotation.z=t*(1+parseInt(c.name.slice(-1))*0.4);
+        if(c.name==='tip')c.material.opacity=0.5+Math.sin(t*4)*0.5;
+        if(c.name==='cape')c.rotation.x=0.15+Math.sin(t)*0.1;
+      });
+      ren.render(sc,cam);
+    })();
+  }
+
+  CHAR_DEFS.forEach((def,i)=>{
+    const card=document.createElement('div');card.className='char-opt'+(i===0?' selected':'');card.dataset.idx=i;
+    const preview=document.createElement('div');preview.className='char-preview';card.appendChild(preview);
+    const name=document.createElement('div');name.className='char-name';name.textContent=def.name;card.appendChild(name);
+    const sub=document.createElement('div');sub.className='char-sub';sub.textContent=def.sub||'';card.appendChild(sub);
+    grid.appendChild(card);
+    // Stagger creation to avoid frame drop
+    setTimeout(()=>create3DPreview(preview,def,i),i*120);
+    card.addEventListener('click',()=>{
+      document.querySelectorAll('.char-opt').forEach(o=>o.classList.remove('selected'));
+      card.classList.add('selected');state.selectedChar=i;
+    });
+  });
+})();
+
+// ─────────────────────────────────────────────
+//  ANGLE PICKER  — drag the glowing tip dot to aim
+// ─────────────────────────────────────────────
+(function buildAnglePicker(){
+  const canvas=document.getElementById('angle-canvas');
+  const ctx=canvas.getContext('2d');
+  const CW=240,CH=130;
+  const cx=120,cy=122,ARC_R=85;
+  const PLANET_DIST=ARC_R+22;
+  // Planet position and hit zone are computed live from state.targetAngle each frame
+
+  let dragging=false;
+  let everDragged=false;   // once touched, hide "drag me" arrow
+  let glowPhase=0;         // animates the tip glow
+
+  // ── compute needle tip position for current angle ──
+  function tipPos(angle){
+    const aRad=Math.PI-angle*Math.PI/180;
+    return {
+      x: cx+Math.cos(aRad)*(ARC_R+12),
+      y: cy-Math.sin(aRad)*(ARC_R+12),
+      aRad
+    };
+  }
+
+  // ── convert pointer event → canvas coordinates ──
+  function evToCanvas(e){
+    const rect=canvas.getBoundingClientRect();
+    const ptr=e.touches?e.touches[0]:e;
+    return {
+      cx2: (ptr.clientX-rect.left)*(CW/rect.width),
+      cy2: (ptr.clientY-rect.top)*(CH/rect.height)
+    };
+  }
+
+  // ── hit-test: is pointer within 20px of tip dot? ──
+  function nearTip(mx,my,angle){
+    const t=tipPos(angle);
+    return Math.hypot(mx-t.x,my-t.y)<20;
+  }
+
+  // ── full redraw ──
+  function draw(angle){
+    ctx.clearRect(0,0,CW,CH);
+    const {aRad}=tipPos(angle);
+    // Compute planet position live from state.targetAngle so it updates on relaunch
+    const tA=state.targetAngle;
+    const tRad=Math.PI-tA*Math.PI/180;
+    const planetX=cx+Math.cos(tRad)*PLANET_DIST;
+    const planetY=cy-Math.sin(tRad)*PLANET_DIST;
+    const hit=Math.abs(angle-tA)<=8;
+    const pulse=0.5+0.5*Math.sin(glowPhase); // 0..1
+
+    // ── background track arc ──
+    ctx.beginPath();ctx.arc(cx,cy,ARC_R,Math.PI,0,false);
+    ctx.lineWidth=18;ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.stroke();
+
+    // ── dashed trajectory line extends past arc to planet ──
+    const far=ARC_R+48;
+    ctx.setLineDash([6,5]);ctx.lineWidth=1.8;
+    ctx.strokeStyle=hit?'rgba(255,213,79,0.55)':'rgba(79,195,247,0.3)';
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(aRad)*far,cy-Math.sin(aRad)*far);
+    ctx.stroke();ctx.setLineDash([]);
+
+    // ── gold bonus-zone highlight on arc (±8° around target) ──
+    const bS=Math.PI-((tA+8)*Math.PI/180),bE=Math.PI-((tA-8)*Math.PI/180);
+    ctx.beginPath();ctx.arc(cx,cy,ARC_R,bS,bE,false);
+    ctx.lineWidth=22;ctx.strokeStyle='rgba(255,213,79,0.18)';ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,cy,ARC_R,bS,bE,false);
+    ctx.lineWidth=3;ctx.strokeStyle=`rgba(255,213,79,${0.55+pulse*0.35})`;ctx.stroke();
+
+    // ── degree tick marks ──
+    for(let a=0;a<=180;a+=15){
+      const r=Math.PI-a*Math.PI/180;
+      const big=a%30===0;
+      const r1=ARC_R-(big?10:6),r2=ARC_R+(big?5:3);
+      ctx.beginPath();ctx.moveTo(cx+Math.cos(r)*r1,cy-Math.sin(r)*r1);
+      ctx.lineTo(cx+Math.cos(r)*r2,cy-Math.sin(r)*r2);
+      ctx.lineWidth=big?1.5:1;ctx.strokeStyle=big?'rgba(255,255,255,0.3)':'rgba(255,255,255,0.12)';ctx.stroke();
+      if(big){
+        ctx.fillStyle='rgba(255,255,255,0.32)';ctx.font='9px sans-serif';ctx.textAlign='center';
+        ctx.fillText(a+'°',cx+Math.cos(r)*(ARC_R-20),cy-Math.sin(r)*(ARC_R-20)+3);
+      }
+    }
+
+    // ── filled progress arc ──
+    ctx.beginPath();ctx.arc(cx,cy,ARC_R,Math.PI,aRad,false);
+    ctx.lineWidth=14;ctx.strokeStyle=hit?'#ffd54f':'#4fc3f7';ctx.stroke();
+
+    // ── PLANET TARGET ──
+    // soft orbit halo
+    ctx.beginPath();ctx.arc(planetX,planetY,20,0,Math.PI*2);
+    ctx.lineWidth=1;ctx.strokeStyle=`rgba(255,213,79,${0.15+pulse*0.15})`;ctx.stroke();
+    // planet body gradient
+    const pg=ctx.createRadialGradient(planetX-4,planetY-4,1,planetX,planetY,13);
+    pg.addColorStop(0,hit?'#ffe082':'#81c784');
+    pg.addColorStop(1,hit?'#e65100':'#1b5e20');
+    ctx.beginPath();ctx.arc(planetX,planetY,13,0,Math.PI*2);ctx.fillStyle=pg;ctx.fill();
+    // equatorial ring
+    ctx.save();ctx.translate(planetX,planetY);ctx.scale(1,0.32);
+    ctx.beginPath();ctx.arc(0,0,18,0,Math.PI*2);
+    ctx.strokeStyle=hit?`rgba(255,213,79,${0.5+pulse*0.4})`:`rgba(79,195,247,${0.35+pulse*0.25})`;
+    ctx.lineWidth=2.5;ctx.stroke();ctx.restore();
+    // hit glow burst
+    if(hit){
+      ctx.shadowBlur=24+pulse*14;ctx.shadowColor='#ffd54f';
+      ctx.beginPath();ctx.arc(planetX,planetY,13,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,213,79,${0.08+pulse*0.1})`;ctx.fill();
+      ctx.shadowBlur=0;
+    }
+    // label
+    ctx.fillStyle=hit?'#ffd54f':'rgba(255,255,255,0.45)';
+    ctx.font=`bold ${hit?11:9}px sans-serif`;ctx.textAlign='center';
+    ctx.fillText(hit?'✓ HIT!':'TARGET',planetX,planetY+28);
+
+    // ── NEEDLE ──
+    const {x:nx,y:ny}=tipPos(angle);
+    // needle shaft
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(nx,ny);
+    ctx.lineWidth=3;ctx.strokeStyle='rgba(255,255,255,0.9)';ctx.stroke();
+    // pivot dot (center)
+    ctx.beginPath();ctx.arc(cx,cy,5,0,Math.PI*2);ctx.fillStyle='#4fc3f7';ctx.fill();
+
+    // ── GLOWING TIP DOT (the drag handle) ──
+    const tipColor=hit?'#ffd54f':'#4fc3f7';
+    const glowR=16+pulse*10;  // pulsing outer glow
+    // outer glow layers
+    const grd=ctx.createRadialGradient(nx,ny,3,nx,ny,glowR);
+    grd.addColorStop(0,hit?`rgba(255,213,79,${0.5+pulse*0.35})`:`rgba(79,195,247,${0.45+pulse*0.35})`);
+    grd.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.beginPath();ctx.arc(nx,ny,glowR,0,Math.PI*2);ctx.fillStyle=grd;ctx.fill();
+    // bright core
+    ctx.shadowBlur=12+pulse*10;ctx.shadowColor=tipColor;
+    ctx.beginPath();ctx.arc(nx,ny,9,0,Math.PI*2);ctx.fillStyle=tipColor;ctx.fill();
+    // white specular highlight
+    ctx.shadowBlur=0;
+    ctx.beginPath();ctx.arc(nx-2.5,ny-2.5,3,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,0.7)';ctx.fill();
+
+    // ── "DRAG ME" arrow label (fades after first drag) ──
+    if(!everDragged){
+      const alpha=0.85;
+      // arrow pointing at tip
+      const ax=nx+18,ay=ny-18;
+      ctx.font='bold 10px sans-serif';ctx.textAlign='left';
+      ctx.fillStyle=`rgba(255,255,255,${alpha})`;
+      ctx.fillText('drag me',ax+4,ay-6);
+      ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(nx+5,ny+5);
+      ctx.lineWidth=1.5;ctx.strokeStyle=`rgba(255,255,255,${alpha*0.7})`;ctx.stroke();
+      ctx.beginPath();ctx.arc(ax,ay,2.5,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${alpha})`;ctx.fill();
+    }
+  }
+
+  // ── animation loop for glow pulse ──
+  function animLoop(){
+    if(state.scene!=='station'){requestAnimationFrame(animLoop);return;}
+    glowPhase+=0.07;
+    draw(state.launchAngle);
+    requestAnimationFrame(animLoop);
+  }
+  animLoop();
+
+  // ── update state + hint text ──
+  function update(a){
+    a=Math.max(0,Math.min(179,a));
+    state.launchAngle=a;
+    document.getElementById('angle-val').textContent=a;
+    const diff=Math.abs(a-state.targetAngle);
+    const inBonus=diff<=8;
+    const hint=document.getElementById('angle-hint');
+    const bl=document.getElementById('bonus-label');
+    if(inBonus){
+      hint.textContent='🎯 Direct hit — bonus skin unlocked!';hint.className='angle-hint good';bl.style.opacity='1';
+    }else if(diff<18){
+      hint.textContent='Almost there — nudge a little more toward the planet';hint.className='angle-hint close';bl.style.opacity='0';
+    }else{
+      hint.textContent=`Drag the glowing dot to aim at the planet (${state.targetAngle}°)`;hint.className='angle-hint off';bl.style.opacity='0';
+    }
+  }
+
+  // ── pointer → angle from origin ──
+  // atan2 gives 0°=right, 90°=up, 180°=left.
+  // Our display has 0°=left and 180°=right, so we flip: displayed = 180 - atan2.
+  function ptrToAngle(e){
+    const {cx2,cy2}=evToCanvas(e);
+    let a=180-Math.atan2(-(cy2-cy),(cx2-cx))*180/Math.PI;
+    return Math.round(Math.max(1,Math.min(179,a)));
+  }
+
+  // ── cursor feedback ──
+  function updateCursor(e){
+    const {cx2,cy2}=evToCanvas(e);
+    canvas.style.cursor=nearTip(cx2,cy2,state.launchAngle)?'grab':'default';
+  }
+
+  // ── MOUSE ──
+  canvas.addEventListener('mousemove',e=>{
+    updateCursor(e);
+    if(dragging){update(ptrToAngle(e));}
+  });
+  canvas.addEventListener('mousedown',e=>{
+    const {cx2,cy2}=evToCanvas(e);
+    if(nearTip(cx2,cy2,state.launchAngle)){
+      dragging=true;everDragged=true;canvas.style.cursor='grabbing';
+    }
+  });
+  canvas.addEventListener('mouseup',()=>{dragging=false;canvas.style.cursor='grab';});
+  canvas.addEventListener('mouseleave',()=>{dragging=false;});
+
+  // ── TOUCH ──
+  canvas.addEventListener('touchstart',e=>{
+    const {cx2,cy2}=evToCanvas(e);
+    // slightly larger hit zone on touch
+    if(Math.hypot(cx2-tipPos(state.launchAngle).x,cy2-tipPos(state.launchAngle).y)<30){
+      dragging=true;everDragged=true;
+    }
+    e.preventDefault();
+  },{passive:false});
+  canvas.addEventListener('touchmove',e=>{
+    if(dragging)update(ptrToAngle(e));
+    e.preventDefault();
+  },{passive:false});
+  canvas.addEventListener('touchend',()=>dragging=false);
+
+  // Expose a reset so the relaunch button can randomize the target each game
+  window.__resetAnglePicker=function(){
+    everDragged=false;
+    update(0);
+  };
+  update(0);
+})();
+
+// ─────────────────────────────────────────────
+//  LAUNCH SEQUENCE
+// ─────────────────────────────────────────────
+document.getElementById('launch-btn').addEventListener('click',()=>{
+  state.bonusSkin=Math.abs(state.launchAngle-state.targetAngle)<=8;
+  if(state.bonusSkin)state.unlockedSkins.push('gold-visor');
+  showScene('launch');
+  runLaunchSequence(()=>{startRunner();});
+});
+
+function runLaunchSequence(cb){
+  const canvas=document.getElementById('launch-canvas');
+  const ctx=canvas.getContext('2d');canvas.width=innerWidth;canvas.height=innerHeight;
+  let t=0;const angle=state.launchAngle*Math.PI/180;
+  const heading=document.getElementById('launch-heading'),sub=document.getElementById('launch-sub');
+  if(state.bonusSkin){heading.textContent='Perfect Trajectory!';sub.textContent='Bonus Skin Unlocked ✨';}
+  else{heading.textContent='Launching...';sub.textContent='Entering the Vortex Field';}
+
+  // Particle trail
+  const particles=[];
+  function spawnParticle(){for(let i=0;i<4;i++)particles.push({x:innerWidth/2,y:innerHeight/2,vx:(Math.random()-0.5)*3+Math.cos(angle)*8,vy:(Math.random()-0.5)*3-Math.sin(angle)*8,life:1,size:2+Math.random()*4,color:`hsl(${200+Math.random()*60},80%,70%)`});}
+
+  function frame(){
+    ctx.fillStyle='rgba(0,0,0,0.15)';ctx.fillRect(0,0,canvas.width,canvas.height);
+    spawnParticle();
+    for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx;p.y+=p.vy;p.life-=0.025;p.vx*=0.98;p.vy*=0.98;if(p.life<=0){particles.splice(i,1);continue;}ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2);ctx.fillStyle=p.color;ctx.globalAlpha=p.life;ctx.fill();}
+    ctx.globalAlpha=1;
+
+    // Bonus trail if in zone
+    if(state.bonusSkin){
+      for(let s=0;s<8;s++){const sx=innerWidth/2+(Math.random()-0.5)*60+Math.cos(angle)*t*3;const sy=innerHeight/2+(Math.random()-0.5)*60-Math.sin(angle)*t*3;ctx.beginPath();ctx.arc(sx,sy,3,0,Math.PI*2);ctx.fillStyle='rgba(255,213,79,0.6)';ctx.fill();}
+    }
+    t++;if(t<90)requestAnimationFrame(frame);else cb();
+  }
+  frame();
+}
+
+// ─────────────────────────────────────────────
+//  THREE.JS RUNNER GAME
+// ─────────────────────────────────────────────
+let runnerScene,runnerCamera,runnerRenderer,runnerClock;
+let astronaut,vortexPanes=[],collectibles=[],debris=[];
+let lane=1;// 0=left,1=center,2=right
+const LANE_X=[-6,0,6];
+let laneTarget=0;
+let gameTimerInterval=null;
+let vortexTimer=null;
+let vortexProb=null,vortexTimerInt=null;
+let nlState=null,nlKpInput='';
+
+function startRunner(){
+  showScene('runner');
+  // Reset state
+  state.score=0;state.streak=0;state.bestStreak=0;state.vortexHit=0;state.correct=0;state.wrong=0;state.timeLeft=180;state.gameLevel=0;state.modalOpen=false;state.running=true;
+  lane=1;laneTarget=0;
+  vortexPanes=[];collectibles=[];debris=[];
+
+  if(!runnerRenderer){
+    initRunnerThree();
+  }else{
+    // Clear old scene objects except background
+    while(vortexPanes.length)runnerScene.remove(vortexPanes.pop());
+    // Rebuild astronaut so newly selected character is reflected
+    if(astronaut){runnerScene.remove(astronaut);}
+    astronaut=buildRunnerAstronaut();
+    astronaut.position.set(0,0,6);
+    runnerScene.add(astronaut);
+  }
+
+  updateRunnerHUD();
+  scheduleVortex();
+
+  // 3-minute game timer — ticks always (modal time counts, like Array Runner)
+  clearInterval(gameTimerInterval);
+  gameTimerInterval=setInterval(()=>{
+    if(!state.running)return;
+    state.timeLeft--;updateRunnerHUD();
+    if(state.timeLeft<=0){clearInterval(gameTimerInterval);endGame();}
+  },1000);
+}
+
+function initRunnerThree(){
+  const container=document.getElementById('scene-runner');
+  runnerScene=new THREE.Scene();
+  runnerCamera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,0.1,2000);
+  runnerCamera.position.set(0,8,22);runnerCamera.lookAt(0,0,-8);
+
+  runnerRenderer=new THREE.WebGLRenderer({antialias:true});
+  runnerRenderer.setSize(innerWidth,innerHeight);runnerRenderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  runnerRenderer.toneMapping=THREE.ACESFilmicToneMapping;
+  runnerRenderer.setClearColor(0x000511,1); // deep space — no transparent background bleed
+  // Fix: canvas must be position:absolute so it fills the container, not flex-shrunk
+  runnerRenderer.domElement.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;';
+  container.appendChild(runnerRenderer.domElement);
+
+  // Stars
+  const n=2500,g=new THREE.BufferGeometry(),p=new Float32Array(n*3),c=new Float32Array(n*3);
+  for(let i=0;i<n;i++){const r=300+Math.random()*1500,t=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1);
+  p[i*3]=r*Math.sin(ph)*Math.cos(t);p[i*3+1]=r*Math.sin(ph)*Math.sin(t);p[i*3+2]=r*Math.cos(ph);
+  const cl=new THREE.Color().setHSL(0.58+Math.random()*0.1,0.3,0.7+Math.random()*0.3);c[i*3]=cl.r;c[i*3+1]=cl.g;c[i*3+2]=cl.b;}
+  g.setAttribute('position',new THREE.BufferAttribute(p,3));g.setAttribute('color',new THREE.BufferAttribute(c,3));
+  runnerScene.add(new THREE.Points(g,new THREE.PointsMaterial({size:2,vertexColors:true,transparent:true,opacity:0.9,sizeAttenuation:true})));
+
+  // Nebula clouds
+  [[-100,20,-300],[100,-30,-400],[-50,50,-500]].forEach(pos=>{
+    const nGeo=new THREE.SphereGeometry(50+Math.random()*30,8,8);
+    const nMat=new THREE.MeshBasicMaterial({color:new THREE.Color().setHSL(0.6+Math.random()*0.2,0.4,0.2),transparent:true,opacity:0.08});
+    const n=new THREE.Mesh(nGeo,nMat);n.position.set(...pos);runnerScene.add(n);
+  });
+
+  // Lane guide lines
+  [-6,0,6].forEach(x=>{
+    const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x,-1,-200),new THREE.Vector3(x,-1,15)]);
+    const mat=new THREE.LineBasicMaterial({color:0x4fc3f7,transparent:true,opacity:0.08});
+    runnerScene.add(new THREE.Line(geo,mat));
+  });
+
+  // Astronaut (Spartan Scholar, simplified for runner performance)
+  astronaut=buildRunnerAstronaut();
+  astronaut.position.set(0,0,6); // closer + centered in view
+  runnerScene.add(astronaut);
+
+  // Lighting
+  const sun=new THREE.DirectionalLight(0xffeedd,1);sun.position.set(50,100,50);runnerScene.add(sun);
+  runnerScene.add(new THREE.AmbientLight(0x334455,0.6));
+  const playerLight=new THREE.PointLight(0x4fc3f7,0.6,40);playerLight.position.set(0,3,6);runnerScene.add(playerLight);
+
+  runnerClock=new THREE.Clock();
+  runnerLoop();
+}
+
+function buildRunnerAstronaut(){
+  const g=new THREE.Group();
+  const def=CHAR_DEFS[state.selectedChar];
+  function hexN(s){return parseInt(s.replace('#',''),16);}
+  const bodyCol=hexN(def.body),accentCol=hexN(def.accent),visorCol=hexN(def.visor);
+  const emissCol=def.emissive||0x111111;
+  const bMat=new THREE.MeshPhongMaterial({color:bodyCol,emissive:emissCol,specular:0x333333,shininess:30});
+  const aMat=def.glowLimbs?new THREE.MeshPhongMaterial({color:accentCol,emissive:new THREE.Color(accentCol).multiplyScalar(0.4)}):bMat.clone();
+  // Body
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.45,0.55,1.3,10),bMat);body.position.y=1.2;g.add(body);
+  // Head + Helmet
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.35,12,12),new THREE.MeshPhongMaterial({color:0x8D5524}));head.position.y=2.4;g.add(head);
+  const helmMat=new THREE.MeshPhongMaterial({color:bodyCol,specular:0x555555,shininess:50});
+  const helm=new THREE.Mesh(new THREE.SphereGeometry(0.44,12,12),helmMat);helm.position.y=2.55;g.add(helm);
+  // Visor
+  const visor=new THREE.Mesh(new THREE.SphereGeometry(0.3,10,10),new THREE.MeshPhongMaterial({color:visorCol,emissive:new THREE.Color(visorCol).multiplyScalar(0.4),transparent:true,opacity:0.7,specular:0xffffff,shininess:120}));visor.position.set(0,2.55,0.35);g.add(visor);
+  // Helmet ring
+  const hr=new THREE.Mesh(new THREE.TorusGeometry(0.44,0.04,8,20),new THREE.MeshPhongMaterial({color:accentCol}));hr.position.copy(visor.position);hr.rotation.x=Math.PI/2;g.add(hr);
+  // Arms
+  [-1,1].forEach(s=>{const a=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.09,0.65,8),aMat.clone());a.position.set(s*0.58,1.25,0);a.rotation.z=s*0.3;a.name=s===-1?'lArm':'rArm';g.add(a);});
+  // Legs
+  [-0.18,0.18].forEach((x,i)=>{const l=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.11,0.8,8),bMat.clone());l.position.set(x,0.4,0);l.name=i===0?'lLeg':'rLeg';g.add(l);});
+  // Jetpack (for characters that have one)
+  if(def.hasJetpack){
+    const pack=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.65,0.3),new THREE.MeshPhongMaterial({color:accentCol}));pack.position.set(0,1.2,-0.45);g.add(pack);
+    [-0.12,0.12].forEach(x=>{const f=new THREE.Mesh(new THREE.ConeGeometry(0.09,0.4,8),new THREE.MeshBasicMaterial({color:0xff6600,transparent:true,opacity:0.7}));f.position.set(x,0.7,-0.5);f.rotation.x=Math.PI;f.name='flame';g.add(f);});
+  }
+  // Cape
+  if(def.hasCape){const cape=new THREE.Mesh(new THREE.PlaneGeometry(1.0,1.5),new THREE.MeshPhongMaterial({color:accentCol,side:THREE.DoubleSide,transparent:true,opacity:0.75}));cape.position.set(0,0.3,-0.5);cape.rotation.x=0.15;cape.name='cape';g.add(cape);}
+  // Antenna
+  if(def.hasAntenna){const ant=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.6),new THREE.MeshPhongMaterial({color:accentCol}));ant.position.set(0.2,3.1,0.1);g.add(ant);const tip=new THREE.Mesh(new THREE.SphereGeometry(0.08,8,8),new THREE.MeshBasicMaterial({color:accentCol}));tip.position.set(0.2,3.45,0.1);tip.name='tip';g.add(tip);}
+  // Energy rings
+  if(def.hasRings){[0.3,-0.1,-0.5].forEach((y,ri)=>{const rn=new THREE.Mesh(new THREE.TorusGeometry(0.9-ri*0.05,0.025,8,24),new THREE.MeshBasicMaterial({color:accentCol,transparent:true,opacity:0.5}));rn.position.y=y+1.0;rn.rotation.x=Math.PI/2;rn.name='orb'+ri;g.add(rn);});}
+  // Helmet decor (Spartan crest or star badge)
+  if(def.type==='spartan'||def.hasHelmetDecor){
+    const crest=new THREE.Mesh(new THREE.BoxGeometry(0.09,0.45,0.75),new THREE.MeshPhongMaterial({color:accentCol,emissive:new THREE.Color(accentCol).multiplyScalar(0.3)}));crest.position.set(0,2.97,0);g.add(crest);
+  }
+  g.scale.set(1.2,1.2,1.2);
+  return g;
+}
+
+// Vortex pane mesh (glowing portal — ring properly surrounds the math label)
+function createVortexPane(problem){
+  const g=new THREE.Group();
+
+  // Outer glow halo (behind everything)
+  const glow=new THREE.Mesh(new THREE.CircleGeometry(7,48),new THREE.MeshBasicMaterial({color:0xab47bc,transparent:true,opacity:0.07,side:THREE.DoubleSide}));glow.position.z=-0.1;g.add(glow);
+
+  // Dark portal face — fills the ring interior
+  const face=new THREE.Mesh(new THREE.CircleGeometry(5,48),new THREE.MeshBasicMaterial({color:0x08031a,transparent:true,opacity:0.94,side:THREE.DoubleSide,depthWrite:false}));face.position.z=0.01;g.add(face);
+
+  // Inner decorative ring
+  const innerRing=new THREE.Mesh(new THREE.TorusGeometry(4.6,0.12,12,48),new THREE.MeshBasicMaterial({color:0x7b1fa2,transparent:true,opacity:0.55}));innerRing.position.z=0.05;g.add(innerRing);
+
+  // Main portal ring — this frames the problem
+  const outerRing=new THREE.Mesh(new THREE.TorusGeometry(5.1,0.5,16,48),new THREE.MeshBasicMaterial({color:0xab47bc}));outerRing.position.z=0.1;g.add(outerRing);
+
+  // Problem label sprite — sized to fit inside the ring
+  const cv=document.createElement('canvas');cv.width=512;cv.height=256;const ctx=cv.getContext('2d');
+  // Clean gradient background (no roundRect — browser compat)
+  const grad=ctx.createRadialGradient(256,128,20,256,128,200);
+  grad.addColorStop(0,'rgba(22,8,55,0)');grad.addColorStop(1,'rgba(8,3,26,0)');
+  ctx.fillStyle=grad;ctx.fillRect(0,0,512,256);
+  // Thin accent lines top & bottom
+  ctx.fillStyle='rgba(171,71,188,0.6)';ctx.fillRect(30,18,452,2);ctx.fillRect(30,236,452,2);
+  // Small label
+  ctx.fillStyle='rgba(171,71,188,0.85)';ctx.font='bold 17px Segoe UI,sans-serif';ctx.textAlign='center';ctx.fillText('VORTEX CHALLENGE',256,42);
+  // Large bold math expression — auto-size so it always fits inside the ring
+  const exprText=problem.q+' = ?';
+  let fontSize=108;ctx.font=`bold ${fontSize}px Segoe UI,sans-serif`;
+  while(ctx.measureText(exprText).width>440&&fontSize>48)fontSize-=4;
+  ctx.font=`bold ${fontSize}px Segoe UI,sans-serif`;
+  const exprY=140+Math.round((108-fontSize)*0.35); // re-center vertically
+  ctx.fillStyle='#ffffff';ctx.textAlign='center';
+  ctx.shadowColor='rgba(200,130,255,0.9)';ctx.shadowBlur=22;
+  ctx.fillText(exprText,256,exprY);ctx.shadowBlur=0;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthTest:false}));
+  // Scale matches the ring interior: ring radius 5.1 → sprite width ~9, height ~4.5
+  sp.scale.set(9,4.5,1);sp.position.z=0.5;sp.renderOrder=1;g.add(sp);
+
+  // speed: 0.13-0.16 u/frame → ~6s travel from z=-52 to player
+  g.userData={problem,lane:R(0,2),speed:0.13+Math.random()*0.03,rotSpeed:(Math.random()-0.5)*0.03};
+  return g;
+}
+
+// Target: 40-50 portals in 180s = one every ~3.6-4.5s.
+// Timer always ticks (modal time counts). Portals spawn at z=-52 at 0.14 u/frame
+// → ~52/0.14/60 ≈ 6.2s travel time — enough reaction time.
+// New portals only spawn when no modal is open, keeping real cadence honest.
+function scheduleVortex(){
+  if(!state.running)return;
+  clearTimeout(vortexTimer);
+  const delay=state.modalOpen
+    ? 500  // poll quickly while in modal, spawn immediately when it clears
+    : 3400+Math.random()*1100; // 3.4 – 4.5 s between portals
+  vortexTimer=setTimeout(()=>{
+    if(!state.running)return;
+    if(state.modalOpen){scheduleVortex();return;} // wait until modal done
+    const lv=LEVELS[Math.min(state.gameLevel,LEVELS.length-1)];
+    const prob=lv.gen();
+    const pane=createVortexPane(prob);
+    const l=R(0,2);
+    pane.position.set(LANE_X[l],0,-52);
+    pane.userData.lane=l;
+    runnerScene.add(pane);
+    vortexPanes.push(pane);
+    scheduleVortex();
+  },delay);
+}
+
+// ── Star collectibles ──
+// Bonus lane: if student hit the planet target, golden stars fill the CENTER lane.
+// Otherwise stars scatter randomly. Bonus lane is locked to lane 1 (center).
+function spawnCollectible(){
+  const bonusLane=state.bonusSkin?1:R(0,2);
+  const color=state.bonusSkin?0xffd54f:0xaaddff;
+  const size=state.bonusSkin?0.6:0.45;
+  const s=new THREE.Mesh(
+    new THREE.OctahedronGeometry(size,0),
+    new THREE.MeshBasicMaterial({color})
+  );
+  // Bonus stars: always center lane, tightly packed, with slight vertical sine weave
+  // Regular stars: random lane, random height
+  s.position.set(LANE_X[bonusLane], state.bonusSkin?(Math.sin(Date.now()*0.001)*1.5):R(-1,2), -60);
+  s.userData={speed:0.14,bonus:state.bonusSkin};
+  if(state.bonusSkin){
+    // Add a glow point light alongside each bonus star
+    const light=new THREE.PointLight(0xffd54f,0.4,6);
+    light.position.copy(s.position);s.userData.light=light;
+    runnerScene.add(light);
+  }
+  runnerScene.add(s);collectibles.push(s);
+}
+// Spawn on a calm interval — portals drive the pace, stars are decoration/reward
+setInterval(()=>{if(state.running&&!state.modalOpen)spawnCollectible();},2200);
+
+// ─────────────────────────────────────────────
+//  RUNNER LOOP
+// ─────────────────────────────────────────────
+function runnerLoop(){
+  if(!runnerRenderer)return;
+  requestAnimationFrame(runnerLoop);
+  if(!state.running||state.scene!=='runner')return;
+  const dt=Math.min(runnerClock.getDelta(),0.05),t=runnerClock.getElapsedTime();
+
+  if(state.modalOpen)return;
+
+  // Lane transition
+  const targetX=LANE_X[lane];
+  astronaut.position.x+=(targetX-astronaut.position.x)*0.15;
+  // Float bob
+  astronaut.position.y=Math.sin(t*1.5)*0.4;
+  // Lean
+  astronaut.rotation.z=(targetX-astronaut.position.x)*-0.08;
+
+  // Animate limbs
+  astronaut.children.forEach(c=>{
+    if(c.name==='lArm')c.rotation.x=Math.sin(t*3)*0.3;
+    if(c.name==='rArm')c.rotation.x=Math.sin(t*3+Math.PI)*0.3;
+    if(c.name==='lLeg')c.rotation.x=Math.sin(t*2)*0.2;
+    if(c.name==='rLeg')c.rotation.x=Math.sin(t*2+Math.PI)*0.2;
+    if(c.name==='flame'){c.material.opacity=0.4+Math.sin(t*15)*0.3;c.scale.y=0.8+Math.sin(t*12)*0.4;}
+  });
+
+  // Move vortex panes toward player
+  for(let i=vortexPanes.length-1;i>=0;i--){
+    const pane=vortexPanes[i];
+    pane.position.z+=pane.userData.speed*(1+state.vortexHit*0.02);
+    // children: [glow(0), face(1), innerRing(2), outerRing(3), sprite(4)]
+    pane.children[3].rotation.z+=pane.userData.rotSpeed;   // spin outer ring
+    pane.children[2].rotation.z-=pane.userData.rotSpeed*0.6; // counter-spin inner ring
+
+    // Collision check
+    if(pane.position.z>astronaut.position.z-0.5&&pane.position.z<astronaut.position.z+3&&!state.modalOpen){
+      if(pane.userData.lane===lane){
+        runnerScene.remove(pane);vortexPanes.splice(i,1);
+        triggerVortex(pane.userData.problem);
+        continue;
+      }
+    }
+    if(pane.position.z>20){runnerScene.remove(pane);vortexPanes.splice(i,1);}
+  }
+
+  // Move collectibles
+  for(let i=collectibles.length-1;i>=0;i--){
+    const s=collectibles[i];
+    s.position.z+=s.userData.speed*(1+state.vortexHit*0.015);
+    s.rotation.x+=0.04;s.rotation.y+=0.05;
+    s.position.y+=Math.sin(t*2+s.position.x)*0.02;
+    // sync bonus light position
+    if(s.userData.light)s.userData.light.position.copy(s.position);
+    const hitRange=s.userData.bonus?3:2; // bonus stars have wider pickup range
+    if(s.position.z>astronaut.position.z+1&&Math.abs(s.position.x-astronaut.position.x)<hitRange){
+      if(s.userData.light)runnerScene.remove(s.userData.light);
+      runnerScene.remove(s);collectibles.splice(i,1);
+      state.score+=5;updateRunnerHUD();showFB('+5','fb-y');
+    }else if(s.position.z>20){runnerScene.remove(s);collectibles.splice(i,1);}
+  }
+
+  // Camera follows
+  runnerCamera.position.x+=(astronaut.position.x*0.3-runnerCamera.position.x)*0.05;
+  runnerRenderer.render(runnerScene,runnerCamera);
+}
+
+// ─────────────────────────────────────────────
+//  VORTEX CHALLENGE
+// ─────────────────────────────────────────────
+function triggerVortex(prob){
+  state.modalOpen=true;state.vortexHit++;vortexProb=prob;
+  document.getElementById('vc-problem').textContent=prob.q+' = ?';
+
+  const choices=new Set([prob.ans]);
+  while(choices.size<4){const off=R(-15,15);if(off!==0&&prob.ans+off>0)choices.add(prob.ans+off);}
+  const shuffled=[...choices].sort(()=>Math.random()-0.5);
+
+  const grid=document.getElementById('vc-choices');grid.innerHTML='';
+  shuffled.forEach(ch=>{
+    const btn=document.createElement('button');btn.className='vc-btn';btn.textContent=ch;
+    btn.onclick=()=>handleVortexAnswer(ch,btn,prob);
+    grid.appendChild(btn);
+  });
+
+  let tl=100;document.getElementById('vc-timer-fill').style.width='100%';
+  clearInterval(vortexTimerInt);
+  vortexTimerInt=setInterval(()=>{
+    tl--;document.getElementById('vc-timer-fill').style.width=tl+'%';
+    if(tl<=0){clearInterval(vortexTimerInt);handleVortexTimeout(prob);}
+  },120);
+
+  document.getElementById('vortex-modal').style.display='flex';
+  updateRunnerHUD();
+}
+
+function handleVortexAnswer(choice,btn,prob){
+  clearInterval(vortexTimerInt);
+  document.querySelectorAll('.vc-btn').forEach(b=>{b.style.pointerEvents='none';if(parseInt(b.textContent)===prob.ans)b.classList.add('v-correct');});
+  const ok=choice===prob.ans;
+  if(!ok)btn.classList.add('v-wrong');
+
+  if(ok){
+    const bonus=10+Math.min(state.streak,10)*2;state.score+=bonus;state.streak++;if(state.streak>state.bestStreak)state.bestStreak=state.streak;state.correct++;
+    if(state.streak%5===0)state.gameLevel=Math.min(state.gameLevel+1,LEVELS.length-1);
+    showFB('+'+bonus,'fb-g');updateRunnerHUD();
+    setTimeout(()=>{document.getElementById('vortex-modal').style.display='none';state.modalOpen=false;},700);
+  }else{
+    state.streak=0;state.wrong++;
+    setTimeout(()=>{document.getElementById('vortex-modal').style.display='none';openNumberLine(prob);},1200);
+  }
+  updateRunnerHUD();
+}
+
+function handleVortexTimeout(prob){
+  state.streak=0;state.wrong++;showFB('Too slow!','fb-r');updateRunnerHUD();
+  document.querySelectorAll('.vc-btn').forEach(b=>{b.style.pointerEvents='none';if(parseInt(b.textContent)===prob.ans)b.classList.add('v-correct');});
+  setTimeout(()=>{document.getElementById('vortex-modal').style.display='none';openNumberLine(prob);},1200);
+}
+
+// ─────────────────────────────────────────────
+//  NUMBER LINE REMEDIATION
+//  Pedagogical strategy: decompose jumps into tens then ones.
+//  e.g. 16 = jump+10, then jump+6. Landing marks glow at each stop.
+//  Big jumps (≥10) → blue arches & marks. Ones → gold arches & marks.
+//  After all tens are tapped, student TYPES the final landing value.
+// ─────────────────────────────────────────────
+
+// Build an array of jump amounts: [10, 6] for b=16, [10,10,3] for b=23
+function buildJumps(abB){
+  if(abB===0)return[0];
+  if(abB<=9)return Array(abB).fill(1);          // count by ones for single digit
+  if(abB<100){
+    const t=Math.floor(abB/10),o=abB%10;
+    const j=Array(t).fill(10);if(o)j.push(o);return j;  // e.g. [10,6]
+  }
+  // 100+: big-hundred chunk + tens + ones (max ~4 jumps total)
+  const h=Math.floor(abB/100)*100,r=abB%100;
+  const j=[h];
+  const t2=Math.floor(r/10)*10,o2=r%10;
+  if(t2>0)j.push(t2);if(o2>0)j.push(o2);
+  return j;
+}
+
+function buildNLTrack(prob){
+  const a=prob.a,b=prob.b,op=prob.op,ans=prob.ans;
+  const abB=Math.abs(b);
+  const jumps=buildJumps(abB);
+  const start=a,end=ans;
+  const pad=Math.max(Math.ceil(abB*0.15),3);
+  const trackMin=Math.min(start,end)-pad;
+  const trackMax=Math.max(start,end)+pad;
+  const range=trackMax-trackMin;
+  // Switch to type after all big (≥10) jumps are tapped — ones = type phase
+  const tensCount=jumps.filter(j=>j>=10).length;
+  const hasOnes=jumps.some(j=>j<10);
+  // If all ones: always click (no type switch). If tens+ones: type the ones part.
+  const switchAt=hasOnes?tensCount:(tensCount>1?R(1,tensCount):0);
+  // Anti-clicker: pick one random click-phase jump to become an MC challenge
+  const clickJumpCount=switchAt>0?switchAt:jumps.length;
+  const mcChallengeAt=clickJumpCount>1?R(1,clickJumpCount-1):-1;
+  return{a,b,op,ans,start,end,jumps,totalJumps:jumps.length,
+         trackMin,trackMax,range,switchAt,mcChallengeAt,mcShown:false,
+         curJump:0,curVal:start,phase:'click',done:false};
+}
+
+// Draw a jump arch above the track — blue for big jumps, gold for ones
+function nlArch(fromVal,toVal,jumpAmt){
+  const t=document.getElementById('nl-track');if(!t)return;
+  const range=nlState.range,tMin=nlState.trackMin;
+  const p1=((fromVal-tMin)/range)*100;
+  const p2=((toVal-tMin)/range)*100;
+  const lp=Math.min(p1,p2),wp=Math.abs(p2-p1);
+  const isBig=jumpAmt>=10;
+  const archH=jumpAmt>=100?44:isBig?30:16;
+  const archColor=isBig?'rgba(79,195,247,0.8)':'rgba(255,213,79,0.8)';
+  const arch=document.createElement('div');arch.className='nl-arch';
+  arch.style.left=lp+'%';arch.style.width=wp+'%';
+  arch.style.height=archH+'px';arch.style.top=(-archH+2)+'px';
+  arch.style.borderColor=archColor;arch.style.borderWidth='3px';
+  if(isBig)arch.style.filter='drop-shadow(0 0 5px rgba(79,195,247,0.5))';
+  else arch.style.filter='drop-shadow(0 0 4px rgba(255,213,79,0.5))';
+  const lbl=document.createElement('div');lbl.className='nl-arch-label';
+  lbl.style.left=(lp+wp/2)+'%';lbl.style.top=(-archH-6)+'px';
+  lbl.style.color=isBig?'#4fc3f7':'#ffd54f';
+  lbl.style.fontSize=isBig?'0.7em':'0.65em';lbl.style.fontWeight='800';
+  lbl.textContent=(nlState.op==='+'?'+':'-')+jumpAmt;
+  t.appendChild(arch);t.appendChild(lbl);
+}
+
+// Place a glowing landing mark at an intermediate stop on the track
+function nlLandingMark(val,jumpAmt){
+  const t=document.getElementById('nl-track');if(!t)return;
+  const pct=((val-nlState.trackMin)/nlState.range)*100;
+  const isBig=jumpAmt>=10;
+  const color=isBig?'#4fc3f7':'#ffd54f';
+  const glow=isBig?`0 0 12px #4fc3f7,0 0 24px rgba(79,195,247,0.5)`:`0 0 10px #ffd54f,0 0 22px rgba(255,213,79,0.45)`;
+  const mark=document.createElement('div');
+  mark.style.cssText=`position:absolute;left:${pct}%;top:19px;width:18px;height:18px;`
+    +`border-radius:50%;transform:translateX(-50%);z-index:4;`
+    +`background:${isBig?'rgba(79,195,247,0.25)':'rgba(255,213,79,0.25)'};`
+    +`box-shadow:${glow};border:2px solid ${color};`;
+  // Value label below the mark
+  const lbl=document.createElement('div');
+  lbl.style.cssText=`position:absolute;top:20px;left:50%;transform:translateX(-50%);`
+    +`font-size:0.65em;font-weight:800;color:${color};white-space:nowrap;`;
+  lbl.textContent=val;mark.appendChild(lbl);t.appendChild(mark);
+}
+
+function nlAdvance(){
+  const jump=nlState.jumps[nlState.curJump];
+  const prev=nlState.curVal;
+  nlState.curVal=nlState.op==='+'?prev+jump:prev-jump;
+  nlState.curJump++;
+  const pct=((nlState.curVal-nlState.trackMin)/nlState.range)*100;
+  const dot=document.getElementById('nl-dot');if(dot)dot.style.left=pct+'%';
+  nlArch(prev,nlState.curVal,jump);
+  // Glowing landing mark at every intermediate stop
+  if(nlState.curVal!==nlState.end)nlLandingMark(nlState.curVal,jump);
+  document.getElementById('nl-running-total').textContent=nlState.curVal;
+}
+
+function openNumberLine(prob){
+  nlKpInput='';
+  nlState=buildNLTrack(prob);
+  const{a,op,ans,start,trackMin,range,jumps,switchAt}=nlState;
+
+  document.getElementById('nl-problem').textContent=prob.q+' = '+ans;
+  // Instruction: describe the jump plan clearly
+  const plan=jumps.map(j=>(op==='+'?'+':'-')+j).join(', ');
+  const isOnesOnly=jumps.every(j=>j<10);
+  document.getElementById('nl-instr').textContent=isOnesOnly
+    ?`Count ${op==='+'?'forward':'back'} from ${a} to reach ${ans}`
+    :`${a} ${op==='+'?'→':'←'} jump ${plan} to reach ${ans}`;
+
+  // Build number line track
+  const wrap=document.getElementById('nl-track-wrap');wrap.innerHTML='';
+  const track=document.createElement('div');track.className='nl-track';track.id='nl-track';wrap.appendChild(track);
+  // Tick marks — prefer landing on multiples of 10 for readability
+  const maxJump=Math.max(...jumps);
+  const tickStep=maxJump>=100?50:maxJump>=10?10:Math.max(1,Math.floor(range/8));
+  for(let v=Math.ceil(trackMin/tickStep)*tickStep;v<=nlState.trackMax+tickStep;v+=tickStep){
+    const pct=((v-trackMin)/range)*100;
+    if(pct<-2||pct>102)continue;
+    const tick=document.createElement('div');tick.className='nl-tick';
+    tick.style.cssText=`left:${Math.min(100,Math.max(0,pct))}%;position:absolute;top:-18px;`;
+    tick.innerHTML=`<div class="nl-tick-line"></div><div class="nl-tick-label">${v}</div>`;
+    track.appendChild(tick);
+  }
+  // Moving dot (the student's current position)
+  const dot=document.createElement('div');dot.className='nl-dot';dot.id='nl-dot';
+  dot.style.left=((start-trackMin)/range*100)+'%';track.appendChild(dot);
+
+  document.getElementById('nl-running-total').textContent=start;
+  document.getElementById('nl-running-total').style.color='#fff';
+  document.getElementById('nl-kp-display').textContent='_';
+  document.getElementById('nl-kp-display').className='nl-kp-display';
+  document.getElementById('nl-kp-display').style.display='flex';
+  document.getElementById('nl-continue-btn').style.display='none';
+
+  renderNLControls();
+  document.getElementById('nl-modal').style.display='flex';
+}
+
+function renderNLControls(){
+  const{op,switchAt,curJump,totalJumps,jumps,phase}=nlState;
+  const kp=document.getElementById('nl-keypad');kp.innerHTML='';
+  nlKpInput='';
+  document.getElementById('nl-kp-display').textContent='_';
+  document.getElementById('nl-kp-display').className='nl-kp-display';
+
+  if(phase==='click'){
+    const curJ=jumps[curJump]||0;
+    const isBig=curJ>=10;
+    const stepBtn=document.createElement('button');
+    stepBtn.className='nl-kp-btn nl-kp-enter';
+    stepBtn.style.cssText=`grid-column:1/-1;font-size:1.1em;padding:14px;`
+      +(isBig?'background:rgba(79,195,247,0.15);border-color:rgba(79,195,247,0.5);color:#4fc3f7;'
+             :'background:rgba(255,213,79,0.12);border-color:rgba(255,213,79,0.4);color:#ffd54f;');
+    stepBtn.textContent=`${op==='+'?'+':'-'}${curJ}  ▶ TAP TO JUMP`;
+    stepBtn.onclick=()=>{
+      // Anti-clicker MC challenge intercept
+      if(!nlState.mcShown&&nlState.mcChallengeAt>=0&&nlState.curJump===nlState.mcChallengeAt){
+        nlState.mcShown=true;
+        showNLMultiChoice();
+        return;
+      }
+      nlAdvance();
+      afterNLStep();
+    };
+    kp.appendChild(stepBtn);
+    const rem=totalJumps-curJump;
+    document.getElementById('nl-step-label').textContent=
+      isBig?`Tap to jump ${op==='+'?'forward':'back'} by ${curJ}  (${rem} remaining)`
+           :`Tap to count ${op==='+'?'up':'back'} — ${rem} step${rem>1?'s':''} remaining`;
+
+  }else{
+    // ── TYPE PHASE: student types the next landing value ──
+    const curJ=nlState.jumps[nlState.curJump];
+    document.getElementById('nl-step-label').textContent=
+      `Type where you land after ${op==='+'?'+':'-'}${curJ}  and press ✓`;
+    const rows=[[7,8,9],[4,5,6],[1,2,3]];
+    rows.forEach(row=>{row.forEach(n=>{
+      const b=document.createElement('button');b.className='nl-kp-btn';b.textContent=n;
+      b.onclick=()=>{nlKpInput+=n;document.getElementById('nl-kp-display').textContent=nlKpInput;
+        document.getElementById('nl-kp-display').className='nl-kp-display';};
+      kp.appendChild(b);
+    });});
+    const bksp=document.createElement('button');bksp.className='nl-kp-btn nl-kp-clear';bksp.textContent='⌫';
+    bksp.onclick=()=>{nlKpInput=nlKpInput.slice(0,-1)||'';
+      document.getElementById('nl-kp-display').textContent=nlKpInput||'_';
+      document.getElementById('nl-kp-display').className='nl-kp-display';};
+    kp.appendChild(bksp);
+    const zB=document.createElement('button');zB.className='nl-kp-btn';zB.textContent='0';
+    zB.onclick=()=>{if(nlKpInput.length<5){nlKpInput+=0;document.getElementById('nl-kp-display').textContent=nlKpInput;}};
+    kp.appendChild(zB);
+    const goB=document.createElement('button');goB.className='nl-kp-btn nl-kp-enter';goB.textContent='✓';goB.onclick=doNLTypeCheck;
+    kp.appendChild(goB);
+  }
+}
+
+// ── Shared post-tap logic (used by tap button and MC correct answer) ──
+function afterNLStep(){
+  if(nlState.curVal===nlState.end){nlFinish();return;}
+  if(nlState.switchAt>0&&nlState.curJump>=nlState.switchAt){
+    nlState.phase='type';
+    document.getElementById('nl-step-label').textContent=
+      `Now type the landing number after ${nlState.op==='+'?'+':'-'}${nlState.jumps[nlState.curJump]}`;
+    renderNLControls();
+  }else{
+    const rem=nlState.totalJumps-nlState.curJump;
+    document.getElementById('nl-step-label').textContent=
+      rem>0?`${rem} jump${rem>1?'s':''} remaining — keep going!`:`Almost there!`;
+    renderNLControls();
+  }
+}
+
+// ── Anti-clicker MC challenge: pops up instead of one tap ──
+function showNLMultiChoice(){
+  const jump=nlState.jumps[nlState.curJump];
+  const correct=nlState.op==='+'?nlState.curVal+jump:nlState.curVal-jump;
+  // Pedagogical distractors
+  const d1=nlState.curVal;                                          // forgot to jump (stayed)
+  const d2=nlState.op==='+'?nlState.curVal+jump*2:nlState.curVal-jump*2; // double-jumped
+  const d3=nlState.op==='+'?correct-1:correct+1;                   // off by one
+  const choices=[correct,d1,d2,d3];
+  // Shuffle
+  for(let i=choices.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[choices[i],choices[j]]=[choices[j],choices[i]];}
+  const kp=document.getElementById('nl-keypad');kp.innerHTML='';
+  document.getElementById('nl-kp-display').style.display='none';
+  document.getElementById('nl-step-label').innerHTML=
+    `<span style="color:#ffd54f;font-weight:800">⭐ Think first!</span> After ${nlState.op==='+'?'+':'-'}${jump}, where do you land?`;
+  choices.forEach(val=>{
+    const b=document.createElement('button');b.className='nl-kp-btn';
+    b.style.cssText='font-size:1.25em;font-weight:700;padding:14px 10px;';
+    b.textContent=val;
+    b.onclick=()=>{
+      // Disable all buttons immediately
+      kp.querySelectorAll('button').forEach(x=>x.disabled=true);
+      if(val===correct){
+        b.style.background='rgba(76,175,80,0.4)';b.style.borderColor='#4caf50';b.style.color='#4caf50';
+        document.getElementById('nl-step-label').textContent='✓ Yes! Great thinking!';
+        document.getElementById('nl-kp-display').style.display='flex';
+        setTimeout(()=>{nlAdvance();afterNLStep();},700);
+      }else{
+        b.style.background='rgba(244,67,54,0.3)';b.style.borderColor='#f44336';b.style.color='#ef5350';
+        // Highlight correct
+        kp.querySelectorAll('button').forEach(x=>{if(parseInt(x.textContent)===correct){x.style.background='rgba(76,175,80,0.25)';x.style.borderColor='#4caf50';}});
+        document.getElementById('nl-step-label').innerHTML=
+          `Not quite! ${nlState.curVal} ${nlState.op==='+'?'+':'-'} ${jump} = <strong style="color:#4fc3f7">${correct}</strong>. Try again!`;
+        setTimeout(()=>{kp.querySelectorAll('button').forEach(x=>x.disabled=false);},1200);
+      }
+    };
+    kp.appendChild(b);
+  });
+}
+
+function doNLTypeCheck(){
+  if(!nlState||nlState.done)return;
+  const typed=parseInt(nlKpInput);nlKpInput='';
+  if(isNaN(typed)){
+    document.getElementById('nl-kp-display').className='nl-kp-display nl-wrong';
+    document.getElementById('nl-step-label').textContent='Type a number first!';
+    setTimeout(()=>{const d=document.getElementById('nl-kp-display');if(d){d.textContent='_';d.className='nl-kp-display';}},700);
+    return;
+  }
+  const jump=nlState.jumps[nlState.curJump];
+  const expected=nlState.op==='+'?nlState.curVal+jump:nlState.curVal-jump;
+
+  if(typed===expected){
+    document.getElementById('nl-kp-display').className='nl-kp-display nl-right';
+    nlAdvance();
+    if(nlState.curVal===nlState.end||nlState.curJump>=nlState.totalJumps){
+      nlFinish();
+    }else{
+      // More jumps remain — back to click for next
+      nlState.phase='click';nlState.switchAt=-1;
+      setTimeout(()=>{renderNLControls();
+        document.getElementById('nl-kp-display').textContent='_';
+        document.getElementById('nl-kp-display').className='nl-kp-display';
+      },400);
+    }
+  }else{
+    document.getElementById('nl-kp-display').className='nl-kp-display nl-wrong';
+    document.getElementById('nl-step-label').innerHTML=
+      `Not ${typed}! ${nlState.op==='+'?'Add':'Subtract'} ${jump} → landing is <strong style="color:#4fc3f7">${expected}</strong>`;
+    setTimeout(()=>{const d=document.getElementById('nl-kp-display');if(d){d.textContent='_';d.className='nl-kp-display';}},900);
+  }
+}
+
+function nlFinish(){
+  nlState.done=true;
+  // Glowing green finish mark at the answer
+  nlLandingMark(nlState.end,0); // 0 = special finish (will be covered by dot, which turns green)
+  const dot=document.getElementById('nl-dot');
+  if(dot){dot.style.background='#4caf50';dot.style.boxShadow='0 0 16px #4caf50,0 0 32px rgba(76,175,80,0.5)';}
+  document.getElementById('nl-running-total').style.color='#4caf50';
+  document.getElementById('nl-step-label').textContent='✓ You reached the answer!';
+  document.getElementById('nl-keypad').innerHTML='';
+  document.getElementById('nl-kp-display').style.display='none';
+  document.getElementById('nl-continue-btn').style.display='inline-block';
+  state.score+=5;updateRunnerHUD();
+}
+
+document.getElementById('nl-continue-btn').addEventListener('click',()=>{
+  document.getElementById('nl-modal').style.display='none';
+  document.getElementById('nl-kp-display').style.display='flex';
+  nlState=null;nlKpInput='';state.modalOpen=false;
+});
+
+// ─────────────────────────────────────────────
+//  KEYBOARD CONTROLS
+// ─────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(state.scene!=='runner'||state.modalOpen)return;
+  if(e.code==='ArrowLeft'||e.code==='KeyA')lane=Math.max(0,lane-1);
+  if(e.code==='ArrowRight'||e.code==='KeyD')lane=Math.min(2,lane+1);
+});
+// Touch controls
+document.getElementById('tc-left').addEventListener('click',()=>{if(state.scene==='runner'&&!state.modalOpen)lane=Math.max(0,lane-1);});
+document.getElementById('tc-right').addEventListener('click',()=>{if(state.scene==='runner'&&!state.modalOpen)lane=Math.min(2,lane+1);});
+
+// ─────────────────────────────────────────────
+//  HUD UPDATE
+// ─────────────────────────────────────────────
+function updateRunnerHUD(){
+  document.getElementById('rh-score').textContent=state.score;
+  document.getElementById('rh-streak').textContent=state.streak>1?state.streak+' 🔥':state.streak;
+  document.getElementById('rh-vortex').textContent=state.correct+'/'+state.vortexHit;
+  const m=Math.floor(state.timeLeft/60),s=state.timeLeft%60;
+  const timerEl=document.getElementById('rh-timer');
+  timerEl.textContent=m+':'+(s<10?'0':'')+s;
+  timerEl.style.color=state.timeLeft<30?'#f44336':state.timeLeft<60?'#ffd54f':'#4fc3f7';
+}
+
+// ─────────────────────────────────────────────
+//  GAME OVER
+// ─────────────────────────────────────────────
+function endGame(){
+  state.missions=(state.missions||0)+1;
+  state.running=false;clearTimeout(vortexTimer);clearInterval(vortexTimerInt);clearInterval(gameTimerInterval);
+  document.getElementById('vortex-modal').style.display='none';
+  document.getElementById('nl-modal').style.display='none';
+  const acc=state.vortexHit>0?Math.round(state.correct/state.vortexHit*100):0;
+  const badge=document.getElementById('go-skin-badge');
+  if(state.bonusSkin){badge.style.display='block';launchConfetti();}
+
+  document.getElementById('go-stats').innerHTML=`
+    <div class="go-stat-row"><span class="go-stat-label">Final Score</span><span class="go-stat-val gold">${state.score}</span></div>
+    <div class="go-stat-row"><span class="go-stat-label">Launch Angle</span><span class="go-stat-val">${state.launchAngle}°${state.bonusSkin?' ★ Bonus!':''}</span></div>
+    <div class="go-stat-row"><span class="go-stat-label">Vortex Panes Hit</span><span class="go-stat-val">${state.vortexHit}</span></div>
+    <div class="go-stat-row"><span class="go-stat-label">Correct Answers</span><span class="go-stat-val green">${state.correct}</span></div>
+    <div class="go-stat-row"><span class="go-stat-label">Accuracy</span><span class="go-stat-val">${acc}%</span></div>
+    <div class="go-stat-row"><span class="go-stat-label">Best Streak</span><span class="go-stat-val">${state.bestStreak} 🔥</span></div>
+  `;
+  showScene('gameover');
+}
+
+document.getElementById('relaunch-btn').addEventListener('click',()=>{
+  // Pick a fresh random planet position so students see a different angle each game
+  state.targetAngle=R(20,160);
+  if(window.__resetAnglePicker)window.__resetAnglePicker();
+  showScene('station');
+});
+
+// ─────────────────────────────────────────────
+//  HELPERS
+// ─────────────────────────────────────────────
+function showFB(t,c){const e=document.createElement('div');e.className=`fb ${c}`;e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),1000);}
+function launchConfetti(){const cols=['#ff6b6b','#4fc3f7','#ffd54f','#ab47bc','#66bb6a'];for(let i=0;i<40;i++){const c=document.createElement('div');c.className='confetti';c.style.left=Math.random()*100+'vw';c.style.top='-10px';c.style.background=cols[R(0,4)];c.style.animationDelay=Math.random()*0.5+'s';document.body.appendChild(c);setTimeout(()=>c.remove(),3000);}}
+
+window.addEventListener('resize',()=>{
+  if(runnerRenderer){runnerCamera.aspect=innerWidth/innerHeight;runnerCamera.updateProjectionMatrix();runnerRenderer.setSize(innerWidth,innerHeight);}
+});
+</script>
+</body>
+</html>
