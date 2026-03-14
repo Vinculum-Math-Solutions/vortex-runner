@@ -12,103 +12,123 @@ body{overflow:hidden;background:#000;font-family:'Segoe UI',system-ui,sans-serif
 .scene{position:fixed;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;}
 .scene.active{display:flex;}
 
-/* ===== STATION SCENE — OPTION B: Interior + Space Window ===== */
-#scene-station{
-  flex-direction:row !important;
-  background:#000;
-  align-items:stretch;
-  justify-content:flex-start;
+/* ===== STATION SCENE — Full-screen 3D + overlay stages ===== */
+#scene-station{background:#000;overflow:hidden;}
+#station-canvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;}
+
+/* ===== VINCULUM BRAND HEADER ===== */
+.vin-header{
+  width:100%;padding:14px 28px 12px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(79,195,247,0.1);
+  background:linear-gradient(180deg,rgba(0,0,0,0.55),rgba(0,0,0,0.2));
+  backdrop-filter:blur(8px);flex-shrink:0;
+}
+.vin-logo{display:flex;align-items:center;gap:11px;}
+.vin-logo-mark{
+  width:34px;height:34px;border-radius:8px;
+  background:linear-gradient(135deg,#7c3fa5,#1e88e5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.05em;font-weight:900;color:#fff;letter-spacing:-1px;
+  box-shadow:0 0 16px rgba(79,195,247,0.28),inset 0 1px 0 rgba(255,255,255,0.15);
+  border:1px solid rgba(255,255,255,0.12);
+}
+.vin-brand-text{display:flex;flex-direction:column;line-height:1;}
+.vin-brand-name{color:#fff;font-size:0.82em;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;}
+.vin-brand-sub{color:#4fc3f7;font-size:0.52em;letter-spacing:4px;text-transform:uppercase;opacity:0.75;margin-top:1px;}
+.vin-station-name{
+  color:rgba(255,255,255,0.55);font-size:0.58em;letter-spacing:3px;text-transform:uppercase;
+  border:1px solid rgba(79,195,247,0.18);border-radius:5px;padding:4px 11px;
+  background:rgba(79,195,247,0.04);
 }
 
-/* LEFT — station interior panel */
-.station-interior{
-  width:43%;min-width:320px;max-width:540px;
-  background:linear-gradient(160deg,#08101f 0%,#0c1828 55%,#080e1c 100%);
-  border-right:1px solid rgba(79,195,247,0.1);
-  display:flex;flex-direction:column;
-  padding:18px 18px 14px;
-  overflow-y:auto;overflow-x:hidden;
-  position:relative;z-index:10;
-  scrollbar-width:none;
+/* ===== STAGE OVERLAYS ===== */
+.station-stage{position:absolute;inset:0;z-index:10;display:flex;}
+
+/* ===== STAGE 1: PILOT SELECT ===== */
+#stage-char{
+  flex-direction:column;align-items:center;
+  background:linear-gradient(180deg,rgba(0,0,0,0.8) 0%,rgba(5,8,28,0.65) 50%,rgba(0,0,0,0.5) 100%);
+  backdrop-filter:blur(3px);
 }
-.station-interior::-webkit-scrollbar{display:none;}
-/* Subtle scan-line texture */
-.station-interior::before{
+.char-stage-body{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:16px 20px 20px;width:100%;overflow-y:auto;scrollbar-width:none;
+}
+.char-stage-body::-webkit-scrollbar{display:none;}
+.char-stage-title{color:#fff;font-size:1.35em;font-weight:800;letter-spacing:2px;margin-bottom:3px;text-shadow:0 0 24px rgba(79,195,247,0.4);}
+.char-stage-sub{color:#4fc3f7;font-size:0.65em;letter-spacing:3px;text-transform:uppercase;margin-bottom:10px;opacity:0.8;}
+.char-timer-label{color:rgba(255,255,255,0.4);font-size:0.62em;letter-spacing:2px;margin-bottom:5px;text-align:center;}
+.char-timer-wrap{width:300px;max-width:85%;height:5px;background:rgba(255,255,255,0.07);border-radius:3px;margin-bottom:18px;overflow:hidden;}
+.char-timer-fill{height:100%;background:linear-gradient(90deg,#4fc3f7,#ab47bc);transition:width 1s linear;border-radius:3px;}
+.char-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%;max-width:880px;margin-bottom:20px;}
+.char-opt{
+  background:rgba(4,8,32,0.88);border:1.5px solid rgba(79,195,247,0.14);
+  border-radius:12px;cursor:pointer;transition:all 0.22s;overflow:hidden;text-align:center;padding-bottom:6px;
+}
+.char-opt:hover{border-color:#4fc3f7;transform:translateY(-3px);box-shadow:0 6px 20px rgba(79,195,247,0.2);}
+.char-opt.selected{border-color:#ffd54f;box-shadow:0 0 20px rgba(255,213,79,0.4);}
+.char-opt .char-preview{width:100%;height:120px;display:block;position:relative;}
+.char-opt .char-preview canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
+.char-opt .char-name{color:#fff;font-size:0.63em;font-weight:700;padding:5px 4px 1px;line-height:1.2;}
+.char-opt .char-sub{color:#4fc3f7;font-size:0.54em;padding:1px 4px 0;opacity:0.65;}
+.prepare-btn{
+  background:linear-gradient(135deg,#1e88e5,#7c3fa5,#ab47bc);
+  border:none;border-radius:12px;padding:14px 54px;
+  color:#fff;font-size:1.05em;font-weight:800;
+  cursor:pointer;transition:transform 0.18s,box-shadow 0.18s;
+  letter-spacing:2px;text-transform:uppercase;
+  box-shadow:0 0 28px rgba(79,195,247,0.22),0 4px 18px rgba(0,0,0,0.4);
+}
+.prepare-btn:hover{transform:scale(1.04);box-shadow:0 0 38px rgba(79,195,247,0.38);}
+
+/* ===== STAGE 2: ANGLE PICKER ===== */
+#stage-angle{flex-direction:row;}
+.angle-panel{
+  width:380px;min-width:340px;max-width:400px;
+  background:linear-gradient(160deg,#07101f 0%,#0d1930 60%,#070e1c 100%);
+  border-right:1px solid rgba(79,195,247,0.1);
+  display:flex;flex-direction:column;position:relative;z-index:1;
+  box-shadow:4px 0 32px rgba(0,0,0,0.65);overflow-y:auto;scrollbar-width:none;
+}
+.angle-panel::-webkit-scrollbar{display:none;}
+.angle-panel::before{
   content:'';position:absolute;inset:0;
-  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(79,195,247,0.012) 3px,rgba(79,195,247,0.012) 4px);
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(79,195,247,0.01) 3px,rgba(79,195,247,0.01) 4px);
   pointer-events:none;z-index:0;
 }
-.si-content{position:relative;z-index:1;display:flex;flex-direction:column;min-height:100%;}
-
-/* Header */
-.si-brand{color:#ab47bc;font-size:0.6em;letter-spacing:4px;text-transform:uppercase;margin-bottom:1px;}
-.si-title{color:#fff;font-size:1.5em;font-weight:800;text-shadow:0 0 22px rgba(79,195,247,0.7);letter-spacing:1px;margin-bottom:6px;}
-.si-divider{width:100%;height:1px;background:linear-gradient(90deg,rgba(79,195,247,0.35),rgba(171,71,188,0.2),transparent);margin-bottom:10px;}
-
-/* Mission status panel */
-.si-status{
-  background:rgba(79,195,247,0.04);
-  border:1px solid rgba(79,195,247,0.12);
-  border-radius:10px;padding:9px 13px;margin-bottom:10px;
+.angle-panel-content{position:relative;z-index:1;display:flex;flex-direction:column;min-height:100%;}
+/* Pilot badge in stage 2 */
+.pilot-badge{
+  padding:12px 18px;border-bottom:1px solid rgba(79,195,247,0.08);
+  display:flex;align-items:center;gap:12px;flex-shrink:0;
 }
-.si-status-label{color:#4fc3f7;font-size:0.55em;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px;}
-.si-stat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
+.pilot-badge-info{flex:1;}
+.pilot-badge-label{color:#4fc3f7;font-size:0.52em;letter-spacing:3px;text-transform:uppercase;}
+.pilot-badge-name{color:#fff;font-size:0.85em;font-weight:700;margin-top:1px;}
+.pilot-badge-sub{color:rgba(79,195,247,0.5);font-size:0.6em;}
+/* Mission stats */
+.si-status{margin:10px 16px;padding:8px 13px;background:rgba(79,195,247,0.04);border:1px solid rgba(79,195,247,0.1);border-radius:8px;flex-shrink:0;}
+.si-status-label{color:#4fc3f7;font-size:0.52em;letter-spacing:3px;text-transform:uppercase;margin-bottom:5px;}
+.si-stat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;}
 .si-stat-row:last-child{margin-bottom:0;}
-.si-stat-name{color:#445;font-size:0.65em;text-transform:uppercase;letter-spacing:1px;}
-.si-stat-val{color:#fff;font-size:0.74em;font-weight:700;}
+.si-stat-name{color:#445;font-size:0.6em;text-transform:uppercase;letter-spacing:1px;}
+.si-stat-val{color:#fff;font-size:0.7em;font-weight:700;}
 .si-stat-val.green{color:#4caf50;}.si-stat-val.gold{color:#ffd54f;}
-
-/* Pilot selector */
-.char-select-label{color:#4fc3f7;font-size:0.6em;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;}
-.char-grid{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:7px;
-  margin-bottom:11px;
-}
-.char-opt{
-  background:rgba(10,14,46,0.88);border:1.5px solid rgba(79,195,247,0.16);
-  border-radius:10px;cursor:pointer;transition:all 0.22s;overflow:hidden;text-align:center;
-  padding-bottom:5px;
-}
-.char-opt:hover{border-color:#4fc3f7;transform:translateY(-2px);box-shadow:0 4px 14px rgba(79,195,247,0.15);}
-.char-opt.selected{border-color:#ffd54f;box-shadow:0 0 16px rgba(255,213,79,0.35);}
-.char-opt .char-preview{width:100%;height:72px;display:block;position:relative;}
-.char-opt .char-preview canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
-.char-opt .char-name{color:#fff;font-size:0.6em;font-weight:700;padding:4px 3px 0;line-height:1.2;}
-.char-opt .char-sub{color:#555;font-size:0.54em;padding:1px 3px 0;}
-
-/* Angle picker — compact */
-.angle-card{
-  background:rgba(10,14,46,0.6);border:1.5px solid rgba(79,195,247,0.22);
-  border-radius:13px;padding:10px 12px;text-align:center;
-}
-.angle-card h3{color:#4fc3f7;font-size:0.6em;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;}
-#angle-canvas{display:block;margin:0 auto 4px;cursor:pointer;}
-.angle-display{color:#fff;font-size:1.6em;font-weight:700;margin:3px 0;}
-.angle-hint{font-size:0.68em;min-height:1em;margin-bottom:5px;transition:color 0.3s;}
+/* Angle card */
+.angle-card{flex:1;display:flex;flex-direction:column;padding:14px 18px 18px;}
+.angle-card h3{color:#c8a020;font-size:0.6em;text-transform:uppercase;letter-spacing:3px;margin-bottom:10px;text-align:center;}
+#angle-canvas{display:block;margin:0 auto 6px;cursor:pointer;}
+.angle-display{color:#fff;font-size:2em;font-weight:800;margin:4px 0;text-align:center;text-shadow:0 0 20px rgba(79,195,247,0.35);}
+.angle-hint{font-size:0.7em;min-height:1.2em;margin-bottom:8px;transition:color 0.3s;text-align:center;}
 .angle-hint.good{color:#4caf50;}.angle-hint.close{color:#ffd54f;}.angle-hint.off{color:#ef5350;}
 .launch-btn{
-  width:100%;background:linear-gradient(135deg,#4fc3f7,#ab47bc);border:none;
-  border-radius:10px;padding:11px;color:#fff;font-size:0.95em;font-weight:700;
-  cursor:pointer;transition:transform 0.18s,box-shadow 0.18s;margin-top:7px;letter-spacing:1px;
+  width:100%;background:linear-gradient(135deg,#1e88e5,#ab47bc);border:none;
+  border-radius:10px;padding:13px;color:#fff;font-size:0.98em;font-weight:800;
+  cursor:pointer;transition:transform 0.18s,box-shadow 0.18s;margin-top:auto;letter-spacing:2px;text-transform:uppercase;
 }
-.launch-btn:hover{transform:scale(1.02);box-shadow:0 0 22px rgba(79,195,247,0.4);}
-.bonus-label{color:#ffd54f;font-size:0.7em;margin-top:4px;opacity:0;transition:opacity 0.5s;min-height:1em;}
-
-/* RIGHT — space window */
-.station-window{flex:1;position:relative;overflow:hidden;}
-#station-canvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;}
-/* Mission window HUD overlays */
-.sw-label{
-  position:absolute;top:14px;left:16px;z-index:5;
-  background:rgba(0,0,0,0.5);border:1px solid rgba(79,195,247,0.28);border-radius:6px;
-  padding:4px 11px;color:#4fc3f7;font-size:0.58em;letter-spacing:2px;text-transform:uppercase;
-  backdrop-filter:blur(4px);
-}
-.sw-watermark{
-  position:absolute;bottom:14px;right:16px;z-index:5;
-  color:rgba(171,71,188,0.3);font-size:0.58em;letter-spacing:3px;text-transform:uppercase;
-  text-shadow:0 0 8px rgba(171,71,188,0.25);
-}
+.launch-btn:hover{transform:scale(1.02);box-shadow:0 0 28px rgba(79,195,247,0.4);}
+.bonus-label{color:#ffd54f;font-size:0.68em;margin-top:5px;opacity:0;transition:opacity 0.5s;min-height:1em;text-align:center;}
 
 /* ===== LAUNCH SCENE ===== */
 #scene-launch{background:#000;}
@@ -215,6 +235,7 @@ body{overflow:hidden;background:#000;font-family:'Segoe UI',system-ui,sans-serif
 .fb-g{color:#4caf50;text-shadow:0 0 30px rgba(76,175,80,0.5);}
 .fb-r{color:#ff7043;text-shadow:0 0 30px rgba(255,112,67,0.5);}
 .fb-y{color:#ffd54f;text-shadow:0 0 30px rgba(255,213,79,0.5);}
+.fb-fp{color:#66bb6a;text-shadow:0 0 40px rgba(102,187,106,0.7);font-size:2.5em;}
 @keyframes fbA{0%{transform:translate(-50%,-50%) scale(0.5);opacity:0;}25%{transform:translate(-50%,-50%) scale(1.15);opacity:1;}100%{transform:translate(-50%,-50%) scale(1) translateY(-35px);opacity:0;}}
 
 .confetti{position:fixed;width:8px;height:8px;z-index:400;pointer-events:none;border-radius:2px;animation:cF 2s linear forwards;}
@@ -228,55 +249,96 @@ body{overflow:hidden;background:#000;font-family:'Segoe UI',system-ui,sans-serif
 </head>
 <body>
 
-<!-- STATION SCENE — Option B: Interior left + Space window right -->
+<!-- STATION SCENE — Full-screen 3D + two-stage overlay -->
 <div class="scene active" id="scene-station">
 
-  <!-- LEFT: Station Interior -->
-  <div class="station-interior">
-    <div class="si-content">
-      <!-- Header -->
-      <div class="si-brand">Vinculum Math Solutions</div>
-      <div class="si-title">Space Station α</div>
-      <div class="si-divider"></div>
+  <!-- Full-screen 3D space background -->
+  <canvas id="station-canvas"></canvas>
 
-      <!-- Mission Status panel -->
-      <div class="si-status">
-        <div class="si-status-label">Mission Status</div>
-        <div class="si-stat-row">
-          <span class="si-stat-name">Status</span>
-          <span class="si-stat-val green" id="si-status-val">● Ready for Launch</span>
-        </div>
-        <div class="si-stat-row">
-          <span class="si-stat-name">Best Streak</span>
-          <span class="si-stat-val gold" id="si-best-streak">—</span>
-        </div>
-        <div class="si-stat-row">
-          <span class="si-stat-name">Missions Flown</span>
-          <span class="si-stat-val" id="si-missions">0</span>
+  <!-- ── STAGE 1: PILOT SELECT ── -->
+  <div id="stage-char" class="station-stage" style="flex-direction:column;align-items:center;">
+
+    <!-- Vinculum Brand Header -->
+    <div class="vin-header">
+      <div class="vin-logo">
+        <div class="vin-logo-mark">V</div>
+        <div class="vin-brand-text">
+          <div class="vin-brand-name">Vinculum</div>
+          <div class="vin-brand-sub">Math Solutions</div>
         </div>
       </div>
-
-      <!-- Pilot Select -->
-      <div class="char-select-label">Select Pilot</div>
-      <div class="char-grid" id="char-grid"></div>
-
-      <!-- Angle Card -->
-      <div class="angle-card">
-        <h3>Set Launch Angle — Aim at the Planet</h3>
-        <canvas id="angle-canvas" width="240" height="130"></canvas>
-        <div class="angle-display"><span id="angle-val">0</span>°</div>
-        <div class="angle-hint off" id="angle-hint">Drag the glowing dot to aim</div>
-        <div class="bonus-label" id="bonus-label">🎯 Bonus Trajectory!</div>
-        <button class="launch-btn" id="launch-btn">🚀 LAUNCH MISSION</button>
-      </div>
+      <div class="vin-station-name">Space Station ALPHA</div>
     </div>
+
+    <div class="char-stage-body">
+      <div class="char-stage-title">Select Your Pilot</div>
+      <div class="char-stage-sub">Choose your astronaut for this mission</div>
+      <div class="char-timer-label" id="char-timer-label">Auto-launching in 15s</div>
+      <div class="char-timer-wrap"><div class="char-timer-fill" id="char-timer-fill" style="width:100%"></div></div>
+      <div class="char-grid" id="char-grid"></div>
+      <button class="prepare-btn" id="prepare-btn">PREPARE FOR LAUNCH →</button>
+    </div>
+
   </div>
 
-  <!-- RIGHT: Space Window -->
-  <div class="station-window">
-    <canvas id="station-canvas"></canvas>
-    <div class="sw-label">▸ MISSION WINDOW</div>
-    <div class="sw-watermark">Vinculum</div>
+  <!-- ── STAGE 2: LAUNCH ANGLE ── -->
+  <div id="stage-angle" class="station-stage" style="display:none;flex-direction:row;">
+
+    <div class="angle-panel">
+      <div class="angle-panel-content">
+
+        <!-- Vinculum Mini Header -->
+        <div class="vin-header" style="padding:10px 16px 8px;">
+          <div class="vin-logo">
+            <div class="vin-logo-mark" style="width:28px;height:28px;font-size:0.9em;border-radius:6px;">V</div>
+            <div class="vin-brand-text">
+              <div class="vin-brand-name" style="font-size:0.72em;">Vinculum</div>
+              <div class="vin-brand-sub" style="font-size:0.48em;">Math Solutions</div>
+            </div>
+          </div>
+          <div class="vin-station-name" style="font-size:0.54em;">Space Station ALPHA</div>
+        </div>
+
+        <!-- Selected Pilot Badge -->
+        <div class="pilot-badge">
+          <div class="pilot-badge-info">
+            <div class="pilot-badge-label">Selected Pilot</div>
+            <div class="pilot-badge-name" id="pilot-badge-name">Spartan Scholar</div>
+            <div class="pilot-badge-sub" id="pilot-badge-sub">Math Warrior</div>
+          </div>
+        </div>
+
+        <!-- Mission Stats -->
+        <div class="si-status">
+          <div class="si-status-label">Mission Status</div>
+          <div class="si-stat-row">
+            <span class="si-stat-name">Status</span>
+            <span class="si-stat-val green" id="si-status-val">● Ready for Launch</span>
+          </div>
+          <div class="si-stat-row">
+            <span class="si-stat-name">Best Streak</span>
+            <span class="si-stat-val gold" id="si-best-streak">—</span>
+          </div>
+          <div class="si-stat-row">
+            <span class="si-stat-name">Missions Flown</span>
+            <span class="si-stat-val" id="si-missions">0</span>
+          </div>
+        </div>
+
+        <!-- Angle Picker -->
+        <div class="angle-card">
+          <h3>Set Launch Angle — Aim at the Planet</h3>
+          <canvas id="angle-canvas" width="340" height="190"></canvas>
+          <div class="angle-display"><span id="angle-val">0</span>°</div>
+          <div class="angle-hint off" id="angle-hint">Drag the glowing dot to aim</div>
+          <div class="bonus-label" id="bonus-label">◈ FREE PASS EARNED — 1 miss forgiven!</div>
+          <button class="launch-btn" id="launch-btn">LAUNCH MISSION</button>
+        </div>
+
+      </div>
+    </div>
+    <!-- Right side is transparent so 3D space shows through -->
+
   </div>
 
 </div>
@@ -301,10 +363,10 @@ body{overflow:hidden;background:#000;font-family:'Segoe UI',system-ui,sans-serif
   <div class="go-ui">
     <div class="go-brand">Vinculum Math Solutions</div>
     <div class="go-title">Mission Complete!</div>
-    <div class="go-skin-badge" id="go-skin-badge">✨ Bonus Skin Unlocked!</div>
+    <div class="go-skin-badge" id="go-skin-badge"></div>
     <div class="go-stats" id="go-stats"></div>
     <button class="relaunch-btn" id="relaunch-btn">RELAUNCH MISSION</button>
-    <div class="go-sub">Return to Station Alpha for another attempt</div>
+    <div class="go-sub">Return to Station ALPHA for another attempt</div>
   </div>
 </div>
 
@@ -372,8 +434,7 @@ let state={
   scene:'station',
   launchAngle:0,
   targetAngle:R(20,160), // random planet position — changes every game
-  bonusSkin:false,
-  unlockedSkins:[],
+  freePass:false,   // earned by locking angle on target — forgives one wrong answer
   missions:0,
   selectedChar:0, // 0=Spartan 1=Classic 2=Neon
   score:0,streak:0,bestStreak:0,
@@ -417,20 +478,54 @@ const CHAR_DEFS=[
 // ─────────────────────────────────────────────
 //  SCENE MANAGER
 // ─────────────────────────────────────────────
+let _charTimer=null;
+
+function showCharSelect(){
+  document.getElementById('stage-char').style.display='flex';
+  document.getElementById('stage-angle').style.display='none';
+  let t=15;
+  clearInterval(_charTimer);
+  const fill=document.getElementById('char-timer-fill');
+  const label=document.getElementById('char-timer-label');
+  if(fill)fill.style.transition='none';
+  if(fill)fill.style.width='100%';
+  // Force reflow so the instant-reset is visible before transition restarts
+  if(fill){void fill.offsetWidth;fill.style.transition='width 1s linear';}
+  if(label)label.textContent='Auto-launching in '+t+'s';
+  _charTimer=setInterval(()=>{
+    t--;
+    if(fill)fill.style.width=(t/15*100)+'%';
+    if(label)label.textContent=t>0?'Auto-launching in '+t+'s':'Launching…';
+    if(t<=0){clearInterval(_charTimer);showAngleStage();}
+  },1000);
+}
+
+function showAngleStage(){
+  clearInterval(_charTimer);
+  document.getElementById('stage-char').style.display='none';
+  document.getElementById('stage-angle').style.display='flex';
+  // Update pilot badge
+  const def=CHAR_DEFS[state.selectedChar];
+  const nm=document.getElementById('pilot-badge-name');
+  const sb=document.getElementById('pilot-badge-sub');
+  if(nm)nm.textContent=def.name;
+  if(sb)sb.textContent=def.sub||'';
+  // Update mission stats
+  const best=document.getElementById('si-best-streak');
+  const mFlown=document.getElementById('si-missions');
+  const sv=document.getElementById('si-status-val');
+  if(best)best.textContent=state.bestStreak>0?state.bestStreak:'—';
+  if(mFlown)mFlown.textContent=state.missions||0;
+  if(sv)sv.textContent=state.missions>0?'● Returning Pilot':'● Ready for Launch';
+}
+
 function showScene(name){
   document.querySelectorAll('.scene').forEach(s=>s.classList.remove('active'));
   document.getElementById('scene-'+name).classList.add('active');
   document.getElementById('runner-hud').style.display=name==='runner'?'flex':'none';
   state.scene=name;
-  // Update station interior stats panel whenever we return to station
-  if(name==='station'){
-    const best=document.getElementById('si-best-streak');
-    const mFlown=document.getElementById('si-missions');
-    const sv=document.getElementById('si-status-val');
-    if(best)best.textContent=state.bestStreak>0?'🔥 '+state.bestStreak:'—';
-    if(mFlown)mFlown.textContent=state.missions||0;
-    if(sv){sv.textContent=state.missions>0?'● Returning Pilot':'● Ready for Launch';}
-  }
+  // On every station visit — start at Stage 1 (pilot select)
+  if(name==='station'){showCharSelect();}
   if(name==='runner'){document.getElementById('touch-controls').style.display='flex';}
   else{document.getElementById('touch-controls').style.display='none';}
 }
@@ -440,14 +535,10 @@ function showScene(name){
 // ─────────────────────────────────────────────
 (function buildStationBg(){
   const canvas=document.getElementById('station-canvas');
-  const ren=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  const ren=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
   ren.setPixelRatio(Math.min(devicePixelRatio,2));
-  // Size to the right panel (.station-window), not full screen
-  function getWinSize(){
-    const p=canvas.parentElement;
-    return{w:p&&p.offsetWidth>10?p.offsetWidth:Math.round(innerWidth*0.57),
-           h:p&&p.offsetHeight>10?p.offsetHeight:innerHeight};
-  }
+  // Full-screen — canvas is now the 3D background behind all overlays
+  function getWinSize(){return{w:innerWidth,h:innerHeight};}
   const ws0=getWinSize();
   const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(72,ws0.w/ws0.h,0.1,3000);
   cam.position.set(0,18,130);
@@ -461,31 +552,7 @@ function showScene(name){
   g.setAttribute('position',new THREE.BufferAttribute(p,3));g.setAttribute('color',new THREE.BufferAttribute(c,3));
   sc.add(new THREE.Points(g,new THREE.PointsMaterial({size:1.8,vertexColors:true,transparent:true,opacity:0.85,sizeAttenuation:true})));
 
-  // Space Station structure
-  const station=new THREE.Group();
-  // Main hub
-  const hub=new THREE.Mesh(new THREE.CylinderGeometry(8,8,18,12),new THREE.MeshPhongMaterial({color:0x778899,emissive:0x112233}));
-  station.add(hub);
-  // Docking rings
-  [0,10,-10].forEach(y=>{const r=new THREE.Mesh(new THREE.TorusGeometry(10,0.8,8,24),new THREE.MeshPhongMaterial({color:0x4fc3f7,emissive:0x1a4466}));r.position.y=y;r.rotation.x=Math.PI/2;station.add(r);});
-  // Solar panels
-  [-1,1].forEach(side=>{
-    const arm=new THREE.Mesh(new THREE.BoxGeometry(30,0.5,1.5),new THREE.MeshPhongMaterial({color:0x888899}));arm.position.set(side*25,0,0);station.add(arm);
-    const panel=new THREE.Mesh(new THREE.BoxGeometry(20,12,0.3),new THREE.MeshPhongMaterial({color:0x1a237e,emissive:0x0a1240}));panel.position.set(side*35,0,0);station.add(panel);
-    // Panel grid lines
-    for(let i=-2;i<=2;i++){const l=new THREE.Mesh(new THREE.BoxGeometry(20,0.15,0.35),new THREE.MeshBasicMaterial({color:0x3949ab}));l.position.set(side*35,i*2.2,0.18);station.add(l);}
-  });
-  // Viewing dome
-  const dome=new THREE.Mesh(new THREE.SphereGeometry(5,16,8,0,Math.PI*2,0,Math.PI/2),new THREE.MeshPhongMaterial({color:0x4fc3f7,transparent:true,opacity:0.3,specular:0xffffff,shininess:120}));
-  dome.position.y=9;station.add(dome);
-  // Antenna
-  const ant=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.15,12,8),new THREE.MeshPhongMaterial({color:0xcccccc}));ant.position.set(0,15,0);station.add(ant);
-  const antTip=new THREE.Mesh(new THREE.SphereGeometry(0.6,8,8),new THREE.MeshBasicMaterial({color:0xff4444}));antTip.position.set(0,21,0);station.add(antTip);
-  // Thruster nozzles
-  for(let i=0;i<4;i++){const t=new THREE.Mesh(new THREE.CylinderGeometry(1.5,2,3,8),new THREE.MeshPhongMaterial({color:0x444455}));t.position.set(Math.cos(i*Math.PI/2)*9,-10,Math.sin(i*Math.PI/2)*9);station.add(t);}
-
-  // Push the decorative station to upper-left, small and out of way
-  station.position.set(-55,30,-80);station.scale.setScalar(0.5);sc.add(station);
+  // (Large decorative station removed — only the orbiting mini station remains)
 
   // ── EARTH — large, lower-right, clearly visible behind the UI ──
   const EARTH_POS=new THREE.Vector3(110,-55,-180);
@@ -538,36 +605,45 @@ function showScene(name){
     new THREE.TorusGeometry(130,0.4,8,120),
     new THREE.MeshBasicMaterial({color:0x4fc3f7,transparent:true,opacity:0.18})
   );
-  orbitRing.position.copy(EARTH_POS);orbitRing.rotation.x=Math.PI*0.18;sc.add(orbitRing);
+  orbitRing.position.copy(EARTH_POS);orbitRing.rotation.x=0.18;sc.add(orbitRing);
 
-  // ── MOON — upper-left, clearly visible ──
-  const MOON_POS=new THREE.Vector3(-200,100,-350);
+  // ── MOON — orbits Earth on a different inclined trajectory ──
   const moon=new THREE.Mesh(new THREE.SphereGeometry(28,32,32),new THREE.MeshPhongMaterial({color:0xccccbb,emissive:0x161616,shininess:5}));
-  moon.position.copy(MOON_POS);sc.add(moon);
-  // Craters
+  // Craters attached as children so they move with the moon
   [[0.4,0.6,3.5],[1.8,1.1,2.2],[3.5,0.8,4.0],[5.2,1.4,1.8],[2.2,0.3,2.8]].forEach(([ph,th,r])=>{
     const crater=new THREE.Mesh(new THREE.CircleGeometry(r,12),new THREE.MeshPhongMaterial({color:0xaaaaaa,emissive:0x111111}));
-    crater.position.set(
-      MOON_POS.x+Math.sin(th)*Math.cos(ph)*28.1,
-      MOON_POS.y+Math.sin(th)*Math.sin(ph)*28.1,
-      MOON_POS.z+Math.cos(th)*28.1
-    );
-    crater.lookAt(MOON_POS);sc.add(crater);
+    crater.position.set(Math.sin(th)*Math.cos(ph)*28.1,Math.sin(th)*Math.sin(ph)*28.1,Math.cos(th)*28.1);
+    crater.lookAt(new THREE.Vector3(0,0,0));moon.add(crater);
   });
+  // Moon pivot — tilted plane (different from station orbit ~0.18 rad)
+  const moonPivot=new THREE.Group();
+  moonPivot.position.copy(EARTH_POS);
+  moon.position.set(162,0,0); // orbit radius 162 units around Earth
+  // Start moon on the upper-left of Earth so it is immediately visible
+  moonPivot.rotation.y=2.6;
+  moonPivot.rotation.x=-0.35;
+  moonPivot.add(moon);
+  sc.add(moonPivot);
+  // Moon orbit ring — must match pivot tilt exactly
+  const moonOrbitRing=new THREE.Mesh(
+    new THREE.TorusGeometry(162,0.45,8,120),
+    new THREE.MeshBasicMaterial({color:0xbbbbaa,transparent:true,opacity:0.14})
+  );
+  moonOrbitRing.position.copy(EARTH_POS);
+  moonOrbitRing.rotation.x=-0.35; // same tilt as moonPivot (NOT Math.PI * -0.35)
+  sc.add(moonOrbitRing);
 
   // Lighting
   const sun=new THREE.DirectionalLight(0xffeedd,1.3);sun.position.set(400,200,200);sc.add(sun);
   sc.add(new THREE.AmbientLight(0x334455,0.55));
-  const stationLight=new THREE.PointLight(0x4fc3f7,0.5,200);stationLight.position.set(-55,30,-80);sc.add(stationLight);
+  // Subtle glow near camera for scene fill
+  const fillLight=new THREE.PointLight(0x4fc3f7,0.4,400);fillLight.position.set(0,30,80);sc.add(fillLight);
   // Subtle glow on earth
   const earthGlow=new THREE.PointLight(0x2244ff,0.3,300);earthGlow.position.copy(EARTH_POS);sc.add(earthGlow);
 
   const clk=new THREE.Clock();
   function anim(){if(state.scene!=='station'&&state.scene!=='gameover')return;requestAnimationFrame(anim);
   const t=clk.getElapsedTime();
-  // Decorative station (upper-left)
-  station.rotation.y=t*0.05;
-  antTip.material.opacity=0.5+Math.sin(t*3)*0.5;
   // Earth rotation
   earth.rotation.y=t*0.008;
   // Orbiting mini station — tilted orbit plane for realism
@@ -575,9 +651,11 @@ function showScene(name){
   orbitPivot.rotation.x=Math.sin(t*0.02)*0.05+0.18; // slight wobble
   mTip.material.opacity=0.4+Math.sin(t*4)*0.6;      // blink
   miniSta.rotation.z=t*0.3;                           // gentle roll
-  // Moon slow drift
-  moon.rotation.y=t*0.005;
-  // Gentle camera breathe — pulls back to see more of the scene
+  // Moon — orbits Earth on different tilted plane (slower than station)
+  moonPivot.rotation.y=2.6+t*0.06; // offset so moon starts on visible left side of Earth
+  moonPivot.rotation.x=-0.35+Math.sin(t*0.015)*0.04; // tilt differs from station's +0.18
+  moon.rotation.y=t*0.01;                              // self-rotation
+  // Gentle camera breathe
   cam.position.x=Math.sin(t*0.04)*10;cam.position.y=18+Math.sin(t*0.03)*5;
   cam.position.z=130+Math.sin(t*0.025)*10;
   cam.lookAt(20,-10,-80);
@@ -593,7 +671,7 @@ function showScene(name){
   const grid=document.getElementById('char-grid');
 
   function create3DPreview(container, def, idx){
-    const W=130,H=120;
+    const W=160,H=140;
     const sc=new THREE.Scene();
     const cam=new THREE.PerspectiveCamera(52,W/H,0.1,100);
     cam.position.set(0,1.2,6);
@@ -714,9 +792,9 @@ function showScene(name){
 (function buildAnglePicker(){
   const canvas=document.getElementById('angle-canvas');
   const ctx=canvas.getContext('2d');
-  const CW=240,CH=130;
-  const cx=120,cy=122,ARC_R=85;
-  const PLANET_DIST=ARC_R+22;
+  const CW=340,CH=190;
+  const cx=170,cy=186,ARC_R=140;
+  const PLANET_DIST=ARC_R+26;
   // Planet position and hit zone are computed live from state.targetAngle each frame
 
   let dragging=false;
@@ -753,111 +831,138 @@ function showScene(name){
   function draw(angle){
     ctx.clearRect(0,0,CW,CH);
     const {aRad}=tipPos(angle);
-    // Compute planet position live from state.targetAngle so it updates on relaunch
     const tA=state.targetAngle;
     const tRad=Math.PI-tA*Math.PI/180;
     const planetX=cx+Math.cos(tRad)*PLANET_DIST;
     const planetY=cy-Math.sin(tRad)*PLANET_DIST;
     const hit=Math.abs(angle-tA)<=8;
-    const pulse=0.5+0.5*Math.sin(glowPhase); // 0..1
+    const pulse=0.5+0.5*Math.sin(glowPhase);
 
-    // ── background track arc ──
+    // ── AMBER PROTRACTOR BODY (D-shape semi-circle, filled) ──
+    ctx.beginPath();
+    ctx.arc(cx,cy,ARC_R,Math.PI,0,false);
+    ctx.lineTo(cx+ARC_R,cy);ctx.lineTo(cx-ARC_R,cy);ctx.closePath();
+    ctx.fillStyle='rgba(180,120,10,0.10)';ctx.fill();
+
+    // Protractor outer rim arc
     ctx.beginPath();ctx.arc(cx,cy,ARC_R,Math.PI,0,false);
-    ctx.lineWidth=18;ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.stroke();
+    ctx.lineWidth=2.5;ctx.strokeStyle='rgba(200,150,25,0.55)';ctx.stroke();
 
-    // ── dashed trajectory line extends past arc to planet ──
-    const far=ARC_R+48;
-    ctx.setLineDash([6,5]);ctx.lineWidth=1.8;
-    ctx.strokeStyle=hit?'rgba(255,213,79,0.55)':'rgba(79,195,247,0.3)';
+    // Baseline (straight edge of protractor)
+    ctx.beginPath();ctx.moveTo(cx-ARC_R,cy);ctx.lineTo(cx+ARC_R,cy);
+    ctx.lineWidth=2;ctx.strokeStyle='rgba(200,150,25,0.45)';ctx.stroke();
+
+    // Center origin hole
+    ctx.beginPath();ctx.arc(cx,cy,3.5,0,Math.PI*2);
+    ctx.fillStyle='rgba(220,165,30,0.7)';ctx.fill();
+
+    // ── TICK MARKS (every 1°, medium at 5°, major at 10°) ──
+    for(let a=0;a<=180;a++){
+      const r=Math.PI-a*Math.PI/180;
+      const isMaj=a%10===0, isMed=a%5===0;
+      const tickIn=ARC_R-(isMaj?16:isMed?10:5);
+      const tickOut=ARC_R-1;
+      ctx.beginPath();
+      ctx.moveTo(cx+Math.cos(r)*tickIn,cy-Math.sin(r)*tickIn);
+      ctx.lineTo(cx+Math.cos(r)*tickOut,cy-Math.sin(r)*tickOut);
+      ctx.lineWidth=isMaj?1.8:isMed?1.1:0.55;
+      ctx.strokeStyle=isMaj?'rgba(220,170,40,0.7)':isMed?'rgba(200,150,30,0.42)':'rgba(190,135,20,0.2)';
+      ctx.stroke();
+    }
+    // ── DEGREE LABELS every 10° ──
+    for(let a=0;a<=180;a+=10){
+      const r=Math.PI-a*Math.PI/180;
+      const lR=ARC_R-30;
+      ctx.fillStyle='rgba(225,180,50,0.62)';
+      ctx.font=`bold ${a%30===0?9:7}px sans-serif`;ctx.textAlign='center';
+      // skip 0 and 180 (handled at baseline)
+      if(a>0&&a<180)ctx.fillText(a+'°',cx+Math.cos(r)*lR,cy-Math.sin(r)*lR+3);
+    }
+    // Baseline end labels
+    ctx.fillStyle='rgba(225,180,50,0.6)';ctx.font='bold 8px sans-serif';ctx.textAlign='center';
+    ctx.fillText('0°',cx+ARC_R+12,cy+13);ctx.fillText('180°',cx-ARC_R-16,cy+13);
+
+    // ── BONUS ZONE HIGHLIGHT on protractor arc ──
+    const bS=Math.PI-((tA+8)*Math.PI/180),bE=Math.PI-((tA-8)*Math.PI/180);
+    ctx.beginPath();ctx.arc(cx,cy,ARC_R,bS,bE,false);
+    ctx.lineWidth=20;ctx.strokeStyle='rgba(255,213,79,0.14)';ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,cy,ARC_R,bS,bE,false);
+    ctx.lineWidth=2.5;ctx.strokeStyle=`rgba(255,213,79,${0.5+pulse*0.38})`;ctx.stroke();
+
+    // ── DASHED TRAJECTORY LINE ──
+    const far=ARC_R+42;
+    ctx.setLineDash([7,5]);ctx.lineWidth=1.8;
+    ctx.strokeStyle=hit?'rgba(255,213,79,0.6)':'rgba(79,195,247,0.38)';
     ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(aRad)*far,cy-Math.sin(aRad)*far);
     ctx.stroke();ctx.setLineDash([]);
 
-    // ── gold bonus-zone highlight on arc (±8° around target) ──
-    const bS=Math.PI-((tA+8)*Math.PI/180),bE=Math.PI-((tA-8)*Math.PI/180);
-    ctx.beginPath();ctx.arc(cx,cy,ARC_R,bS,bE,false);
-    ctx.lineWidth=22;ctx.strokeStyle='rgba(255,213,79,0.18)';ctx.stroke();
-    ctx.beginPath();ctx.arc(cx,cy,ARC_R,bS,bE,false);
-    ctx.lineWidth=3;ctx.strokeStyle=`rgba(255,213,79,${0.55+pulse*0.35})`;ctx.stroke();
+    // ── FILLED PROGRESS ARC (shows current aim angle) ──
+    ctx.beginPath();ctx.arc(cx,cy,ARC_R-28,Math.PI,aRad,false);
+    ctx.lineWidth=10;ctx.strokeStyle=hit?'rgba(255,213,79,0.5)':'rgba(79,195,247,0.28)';ctx.stroke();
 
-    // ── degree tick marks ──
-    for(let a=0;a<=180;a+=15){
-      const r=Math.PI-a*Math.PI/180;
-      const big=a%30===0;
-      const r1=ARC_R-(big?10:6),r2=ARC_R+(big?5:3);
-      ctx.beginPath();ctx.moveTo(cx+Math.cos(r)*r1,cy-Math.sin(r)*r1);
-      ctx.lineTo(cx+Math.cos(r)*r2,cy-Math.sin(r)*r2);
-      ctx.lineWidth=big?1.5:1;ctx.strokeStyle=big?'rgba(255,255,255,0.3)':'rgba(255,255,255,0.12)';ctx.stroke();
-      if(big){
-        ctx.fillStyle='rgba(255,255,255,0.32)';ctx.font='9px sans-serif';ctx.textAlign='center';
-        ctx.fillText(a+'°',cx+Math.cos(r)*(ARC_R-20),cy-Math.sin(r)*(ARC_R-20)+3);
-      }
-    }
-
-    // ── filled progress arc ──
-    ctx.beginPath();ctx.arc(cx,cy,ARC_R,Math.PI,aRad,false);
-    ctx.lineWidth=14;ctx.strokeStyle=hit?'#ffd54f':'#4fc3f7';ctx.stroke();
-
-    // ── PLANET TARGET ──
-    // soft orbit halo
-    ctx.beginPath();ctx.arc(planetX,planetY,20,0,Math.PI*2);
-    ctx.lineWidth=1;ctx.strokeStyle=`rgba(255,213,79,${0.15+pulse*0.15})`;ctx.stroke();
-    // planet body gradient
-    const pg=ctx.createRadialGradient(planetX-4,planetY-4,1,planetX,planetY,13);
-    pg.addColorStop(0,hit?'#ffe082':'#81c784');
-    pg.addColorStop(1,hit?'#e65100':'#1b5e20');
-    ctx.beginPath();ctx.arc(planetX,planetY,13,0,Math.PI*2);ctx.fillStyle=pg;ctx.fill();
-    // equatorial ring
-    ctx.save();ctx.translate(planetX,planetY);ctx.scale(1,0.32);
-    ctx.beginPath();ctx.arc(0,0,18,0,Math.PI*2);
-    ctx.strokeStyle=hit?`rgba(255,213,79,${0.5+pulse*0.4})`:`rgba(79,195,247,${0.35+pulse*0.25})`;
-    ctx.lineWidth=2.5;ctx.stroke();ctx.restore();
-    // hit glow burst
+    // ── SPACE TARGET (crosshair + concentric rings) ──
+    const tc=hit?'#ffd54f':'#4fc3f7';
+    const ta=hit?0.95:0.7+pulse*0.2;
+    // Outer pulse ring
+    ctx.beginPath();ctx.arc(planetX,planetY,22+pulse*4,0,Math.PI*2);
+    ctx.lineWidth=1;ctx.strokeStyle=`rgba(${hit?'255,213,79':'79,195,247'},${0.2+pulse*0.18})`;ctx.stroke();
+    // Mid ring
+    ctx.beginPath();ctx.arc(planetX,planetY,15,0,Math.PI*2);
+    ctx.lineWidth=1.5;ctx.strokeStyle=`rgba(${hit?'255,213,79':'79,195,247'},${0.4+pulse*0.25})`;ctx.stroke();
+    // Inner solid disc
+    const pg=ctx.createRadialGradient(planetX-3,planetY-3,1,planetX,planetY,10);
+    pg.addColorStop(0,hit?'#fff9c4':'#b3e5fc');pg.addColorStop(1,hit?'#f57f17':'#0277bd');
+    ctx.beginPath();ctx.arc(planetX,planetY,10,0,Math.PI*2);ctx.fillStyle=pg;ctx.fill();
+    // Glow when hit
     if(hit){
-      ctx.shadowBlur=24+pulse*14;ctx.shadowColor='#ffd54f';
-      ctx.beginPath();ctx.arc(planetX,planetY,13,0,Math.PI*2);
-      ctx.fillStyle=`rgba(255,213,79,${0.08+pulse*0.1})`;ctx.fill();
-      ctx.shadowBlur=0;
+      ctx.shadowBlur=24+pulse*12;ctx.shadowColor='#ffd54f';
+      ctx.beginPath();ctx.arc(planetX,planetY,10,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,213,79,${0.15+pulse*0.15})`;ctx.fill();ctx.shadowBlur=0;
     }
-    // label
-    ctx.fillStyle=hit?'#ffd54f':'rgba(255,255,255,0.45)';
-    ctx.font=`bold ${hit?11:9}px sans-serif`;ctx.textAlign='center';
-    ctx.fillText(hit?'✓ HIT!':'TARGET',planetX,planetY+28);
+    // Crosshair lines
+    const cLen=18,cGap=12;
+    ctx.lineWidth=1.2;ctx.strokeStyle=`rgba(${hit?'255,213,79':'79,195,247'},${ta})`;
+    // horizontal
+    ctx.beginPath();ctx.moveTo(planetX-cLen,planetY);ctx.lineTo(planetX-cGap,planetY);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(planetX+cGap,planetY);ctx.lineTo(planetX+cLen,planetY);ctx.stroke();
+    // vertical
+    ctx.beginPath();ctx.moveTo(planetX,planetY-cLen);ctx.lineTo(planetX,planetY-cGap);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(planetX,planetY+cGap);ctx.lineTo(planetX,planetY+cLen);ctx.stroke();
+    // Center dot
+    ctx.beginPath();ctx.arc(planetX,planetY,2.5,0,Math.PI*2);ctx.fillStyle=tc;ctx.fill();
+    // Label
+    ctx.fillStyle=hit?'#ffd54f':'rgba(255,255,255,0.55)';
+    ctx.font=`bold ${hit?10:8}px sans-serif`;ctx.textAlign='center';
+    ctx.fillText(hit?'LOCKED ON':'TARGET',planetX,planetY-28);
 
     // ── NEEDLE ──
     const {x:nx,y:ny}=tipPos(angle);
-    // needle shaft
     ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(nx,ny);
-    ctx.lineWidth=3;ctx.strokeStyle='rgba(255,255,255,0.9)';ctx.stroke();
-    // pivot dot (center)
+    ctx.lineWidth=2.5;ctx.strokeStyle='rgba(255,255,255,0.88)';ctx.stroke();
+    // Center pivot
     ctx.beginPath();ctx.arc(cx,cy,5,0,Math.PI*2);ctx.fillStyle='#4fc3f7';ctx.fill();
+    ctx.beginPath();ctx.arc(cx,cy,2,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
 
-    // ── GLOWING TIP DOT (the drag handle) ──
+    // ── GLOWING TIP DOT (drag handle) ──
     const tipColor=hit?'#ffd54f':'#4fc3f7';
-    const glowR=16+pulse*10;  // pulsing outer glow
-    // outer glow layers
+    const glowR=18+pulse*10;
     const grd=ctx.createRadialGradient(nx,ny,3,nx,ny,glowR);
     grd.addColorStop(0,hit?`rgba(255,213,79,${0.5+pulse*0.35})`:`rgba(79,195,247,${0.45+pulse*0.35})`);
     grd.addColorStop(1,'rgba(0,0,0,0)');
     ctx.beginPath();ctx.arc(nx,ny,glowR,0,Math.PI*2);ctx.fillStyle=grd;ctx.fill();
-    // bright core
-    ctx.shadowBlur=12+pulse*10;ctx.shadowColor=tipColor;
+    ctx.shadowBlur=14+pulse*10;ctx.shadowColor=tipColor;
     ctx.beginPath();ctx.arc(nx,ny,9,0,Math.PI*2);ctx.fillStyle=tipColor;ctx.fill();
-    // white specular highlight
     ctx.shadowBlur=0;
-    ctx.beginPath();ctx.arc(nx-2.5,ny-2.5,3,0,Math.PI*2);
-    ctx.fillStyle='rgba(255,255,255,0.7)';ctx.fill();
+    ctx.beginPath();ctx.arc(nx-2.5,ny-2.5,3,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.7)';ctx.fill();
 
-    // ── "DRAG ME" arrow label (fades after first drag) ──
+    // ── "DRAG ME" hint (fades after first drag) ──
     if(!everDragged){
-      const alpha=0.85;
-      // arrow pointing at tip
-      const ax=nx+18,ay=ny-18;
-      ctx.font='bold 10px sans-serif';ctx.textAlign='left';
-      ctx.fillStyle=`rgba(255,255,255,${alpha})`;
-      ctx.fillText('drag me',ax+4,ay-6);
-      ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(nx+5,ny+5);
-      ctx.lineWidth=1.5;ctx.strokeStyle=`rgba(255,255,255,${alpha*0.7})`;ctx.stroke();
-      ctx.beginPath();ctx.arc(ax,ay,2.5,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${alpha})`;ctx.fill();
+      const ax=nx+(nx<cx?-38:22),ay=ny-22;
+      ctx.font='bold 10px sans-serif';ctx.textAlign=nx<cx?'right':'left';
+      ctx.fillStyle='rgba(255,255,255,0.8)';
+      ctx.fillText('drag me',ax+(nx<cx?-4:4),ay-4);
+      ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(nx+(nx<cx?-5:5),ny+5);
+      ctx.lineWidth=1.5;ctx.strokeStyle='rgba(255,255,255,0.55)';ctx.stroke();
     }
   }
 
@@ -880,7 +985,7 @@ function showScene(name){
     const hint=document.getElementById('angle-hint');
     const bl=document.getElementById('bonus-label');
     if(inBonus){
-      hint.textContent='🎯 Direct hit — bonus skin unlocked!';hint.className='angle-hint good';bl.style.opacity='1';
+      hint.textContent='Target locked — FREE PASS earned!';hint.className='angle-hint good';bl.style.opacity='1';
     }else if(diff<18){
       hint.textContent='Almost there — nudge a little more toward the planet';hint.className='angle-hint close';bl.style.opacity='0';
     }else{
@@ -943,9 +1048,10 @@ function showScene(name){
 // ─────────────────────────────────────────────
 //  LAUNCH SEQUENCE
 // ─────────────────────────────────────────────
+document.getElementById('prepare-btn').addEventListener('click',showAngleStage);
+
 document.getElementById('launch-btn').addEventListener('click',()=>{
-  state.bonusSkin=Math.abs(state.launchAngle-state.targetAngle)<=8;
-  if(state.bonusSkin)state.unlockedSkins.push('gold-visor');
+  state.freePass=Math.abs(state.launchAngle-state.targetAngle)<=8;
   showScene('launch');
   runLaunchSequence(()=>{startRunner();});
 });
@@ -955,7 +1061,7 @@ function runLaunchSequence(cb){
   const ctx=canvas.getContext('2d');canvas.width=innerWidth;canvas.height=innerHeight;
   let t=0;const angle=state.launchAngle*Math.PI/180;
   const heading=document.getElementById('launch-heading'),sub=document.getElementById('launch-sub');
-  if(state.bonusSkin){heading.textContent='Perfect Trajectory!';sub.textContent='Bonus Skin Unlocked ✨';}
+  if(state.freePass){heading.textContent='Perfect Trajectory!';sub.textContent='FREE PASS earned — 1 miss forgiven!';}
   else{heading.textContent='Launching...';sub.textContent='Entering the Vortex Field';}
 
   // Particle trail
@@ -968,9 +1074,9 @@ function runLaunchSequence(cb){
     for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx;p.y+=p.vy;p.life-=0.025;p.vx*=0.98;p.vy*=0.98;if(p.life<=0){particles.splice(i,1);continue;}ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2);ctx.fillStyle=p.color;ctx.globalAlpha=p.life;ctx.fill();}
     ctx.globalAlpha=1;
 
-    // Bonus trail if in zone
-    if(state.bonusSkin){
-      for(let s=0;s<8;s++){const sx=innerWidth/2+(Math.random()-0.5)*60+Math.cos(angle)*t*3;const sy=innerHeight/2+(Math.random()-0.5)*60-Math.sin(angle)*t*3;ctx.beginPath();ctx.arc(sx,sy,3,0,Math.PI*2);ctx.fillStyle='rgba(255,213,79,0.6)';ctx.fill();}
+    // Free pass glow trail
+    if(state.freePass){
+      for(let s=0;s<5;s++){const sx=innerWidth/2+(Math.random()-0.5)*40+Math.cos(angle)*t*3;const sy=innerHeight/2+(Math.random()-0.5)*40-Math.sin(angle)*t*3;ctx.beginPath();ctx.arc(sx,sy,3,0,Math.PI*2);ctx.fillStyle='rgba(102,187,106,0.5)';ctx.fill();}
     }
     t++;if(t<90)requestAnimationFrame(frame);else cb();
   }
@@ -1151,28 +1257,30 @@ function createVortexPane(problem){
   // Scale matches the ring interior: ring radius 5.1 → sprite width ~9, height ~4.5
   sp.scale.set(9,4.5,1);sp.position.z=0.5;sp.renderOrder=1;g.add(sp);
 
-  // speed: 0.13-0.16 u/frame → ~6s travel from z=-52 to player
-  g.userData={problem,lane:R(0,2),speed:0.13+Math.random()*0.03,rotSpeed:(Math.random()-0.5)*0.03};
+  // speed: ~0.143-0.176 u/frame (~10% faster than original)
+  g.userData={problem,lane:R(0,2),speed:0.143+Math.random()*0.033,rotSpeed:(Math.random()-0.5)*0.03};
   return g;
 }
 
-// Target: 40-50 portals in 180s = one every ~3.6-4.5s.
-// Timer always ticks (modal time counts). Portals spawn at z=-52 at 0.14 u/frame
-// → ~52/0.14/60 ≈ 6.2s travel time — enough reaction time.
-// New portals only spawn when no modal is open, keeping real cadence honest.
+// Target: ~44-55 portals in 180s (~10% faster cadence than original).
+// Lane variation: never spawn same lane twice in a row — forces arrow key use.
+let _lastSpawnLane=-1;
 function scheduleVortex(){
   if(!state.running)return;
   clearTimeout(vortexTimer);
   const delay=state.modalOpen
     ? 500  // poll quickly while in modal, spawn immediately when it clears
-    : 3400+Math.random()*1100; // 3.4 – 4.5 s between portals
+    : 3060+Math.random()*1000; // 3.0 – 4.0 s between portals (~10% faster)
   vortexTimer=setTimeout(()=>{
     if(!state.running)return;
     if(state.modalOpen){scheduleVortex();return;} // wait until modal done
     const lv=LEVELS[Math.min(state.gameLevel,LEVELS.length-1)];
     const prob=lv.gen();
     const pane=createVortexPane(prob);
-    const l=R(0,2);
+    // Pick lane that differs from last spawn — ensures student MUST move left/right
+    let l=R(0,2);
+    if(l===_lastSpawnLane){l=(l+1+R(0,1))%3;} // shift 1 or 2 lanes away
+    _lastSpawnLane=l;
     pane.position.set(LANE_X[l],0,-52);
     pane.userData.lane=l;
     runnerScene.add(pane);
@@ -1182,26 +1290,14 @@ function scheduleVortex(){
 }
 
 // ── Star collectibles ──
-// Bonus lane: if student hit the planet target, golden stars fill the CENTER lane.
-// Otherwise stars scatter randomly. Bonus lane is locked to lane 1 (center).
 function spawnCollectible(){
-  const bonusLane=state.bonusSkin?1:R(0,2);
-  const color=state.bonusSkin?0xffd54f:0xaaddff;
-  const size=state.bonusSkin?0.6:0.45;
+  const lane=R(0,2);
   const s=new THREE.Mesh(
-    new THREE.OctahedronGeometry(size,0),
-    new THREE.MeshBasicMaterial({color})
+    new THREE.OctahedronGeometry(0.45,0),
+    new THREE.MeshBasicMaterial({color:0xaaddff})
   );
-  // Bonus stars: always center lane, tightly packed, with slight vertical sine weave
-  // Regular stars: random lane, random height
-  s.position.set(LANE_X[bonusLane], state.bonusSkin?(Math.sin(Date.now()*0.001)*1.5):R(-1,2), -60);
-  s.userData={speed:0.14,bonus:state.bonusSkin};
-  if(state.bonusSkin){
-    // Add a glow point light alongside each bonus star
-    const light=new THREE.PointLight(0xffd54f,0.4,6);
-    light.position.copy(s.position);s.userData.light=light;
-    runnerScene.add(light);
-  }
+  s.position.set(LANE_X[lane], R(-1,2), -60);
+  s.userData={speed:0.154};
   runnerScene.add(s);collectibles.push(s);
 }
 // Spawn on a calm interval — portals drive the pace, stars are decoration/reward
@@ -1260,11 +1356,7 @@ function runnerLoop(){
     s.position.z+=s.userData.speed*(1+state.vortexHit*0.015);
     s.rotation.x+=0.04;s.rotation.y+=0.05;
     s.position.y+=Math.sin(t*2+s.position.x)*0.02;
-    // sync bonus light position
-    if(s.userData.light)s.userData.light.position.copy(s.position);
-    const hitRange=s.userData.bonus?3:2; // bonus stars have wider pickup range
-    if(s.position.z>astronaut.position.z+1&&Math.abs(s.position.x-astronaut.position.x)<hitRange){
-      if(s.userData.light)runnerScene.remove(s.userData.light);
+    if(s.position.z>astronaut.position.z+1&&Math.abs(s.position.x-astronaut.position.x)<2){
       runnerScene.remove(s);collectibles.splice(i,1);
       state.score+=5;updateRunnerHUD();showFB('+5','fb-y');
     }else if(s.position.z>20){runnerScene.remove(s);collectibles.splice(i,1);}
@@ -1315,6 +1407,11 @@ function handleVortexAnswer(choice,btn,prob){
     if(state.streak%5===0)state.gameLevel=Math.min(state.gameLevel+1,LEVELS.length-1);
     showFB('+'+bonus,'fb-g');updateRunnerHUD();
     setTimeout(()=>{document.getElementById('vortex-modal').style.display='none';state.modalOpen=false;},700);
+  }else if(state.freePass){
+    // Free pass absorbs the miss — no streak reset, no penalty, no number line
+    state.freePass=false;
+    showFB('FREE PASS','fb-fp');updateRunnerHUD();
+    setTimeout(()=>{document.getElementById('vortex-modal').style.display='none';state.modalOpen=false;},1200);
   }else{
     state.streak=0;state.wrong++;
     setTimeout(()=>{document.getElementById('vortex-modal').style.display='none';openNumberLine(prob);},1200);
@@ -1323,9 +1420,15 @@ function handleVortexAnswer(choice,btn,prob){
 }
 
 function handleVortexTimeout(prob){
-  state.streak=0;state.wrong++;showFB('Too slow!','fb-r');updateRunnerHUD();
   document.querySelectorAll('.vc-btn').forEach(b=>{b.style.pointerEvents='none';if(parseInt(b.textContent)===prob.ans)b.classList.add('v-correct');});
-  setTimeout(()=>{document.getElementById('vortex-modal').style.display='none';openNumberLine(prob);},1200);
+  if(state.freePass){
+    state.freePass=false;
+    showFB('FREE PASS','fb-fp');updateRunnerHUD();
+    setTimeout(()=>{document.getElementById('vortex-modal').style.display='none';state.modalOpen=false;},1200);
+  }else{
+    state.streak=0;state.wrong++;showFB('Too slow!','fb-r');updateRunnerHUD();
+    setTimeout(()=>{document.getElementById('vortex-modal').style.display='none';openNumberLine(prob);},1200);
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -1559,7 +1662,7 @@ function showNLMultiChoice(){
   const kp=document.getElementById('nl-keypad');kp.innerHTML='';
   document.getElementById('nl-kp-display').style.display='none';
   document.getElementById('nl-step-label').innerHTML=
-    `<span style="color:#ffd54f;font-weight:800">⭐ Think first!</span> After ${nlState.op==='+'?'+':'-'}${jump}, where do you land?`;
+    `<span style="color:#ffd54f;font-weight:800">Think first:</span> After ${nlState.op==='+'?'+':'-'}${jump}, where do you land?`;
   choices.forEach(val=>{
     const b=document.createElement('button');b.className='nl-kp-btn';
     b.style.cssText='font-size:1.25em;font-weight:700;padding:14px 10px;';
@@ -1655,7 +1758,7 @@ document.getElementById('tc-right').addEventListener('click',()=>{if(state.scene
 // ─────────────────────────────────────────────
 function updateRunnerHUD(){
   document.getElementById('rh-score').textContent=state.score;
-  document.getElementById('rh-streak').textContent=state.streak>1?state.streak+' 🔥':state.streak;
+  document.getElementById('rh-streak').textContent=state.streak;
   document.getElementById('rh-vortex').textContent=state.correct+'/'+state.vortexHit;
   const m=Math.floor(state.timeLeft/60),s=state.timeLeft%60;
   const timerEl=document.getElementById('rh-timer');
@@ -1673,15 +1776,18 @@ function endGame(){
   document.getElementById('nl-modal').style.display='none';
   const acc=state.vortexHit>0?Math.round(state.correct/state.vortexHit*100):0;
   const badge=document.getElementById('go-skin-badge');
-  if(state.bonusSkin){badge.style.display='block';launchConfetti();}
+  // Show whether they earned the free pass (even if they used it during play)
+  const earnedPass=Math.abs(state.launchAngle-state.targetAngle)<=8;
+  if(earnedPass){badge.textContent='Target Locked — Free Pass Earned';badge.style.display='block';}
+  else{badge.style.display='none';}
 
   document.getElementById('go-stats').innerHTML=`
     <div class="go-stat-row"><span class="go-stat-label">Final Score</span><span class="go-stat-val gold">${state.score}</span></div>
-    <div class="go-stat-row"><span class="go-stat-label">Launch Angle</span><span class="go-stat-val">${state.launchAngle}°${state.bonusSkin?' ★ Bonus!':''}</span></div>
+    <div class="go-stat-row"><span class="go-stat-label">Launch Angle</span><span class="go-stat-val">${state.launchAngle}°${earnedPass?' — Free Pass':''}</span></div>
     <div class="go-stat-row"><span class="go-stat-label">Vortex Panes Hit</span><span class="go-stat-val">${state.vortexHit}</span></div>
     <div class="go-stat-row"><span class="go-stat-label">Correct Answers</span><span class="go-stat-val green">${state.correct}</span></div>
     <div class="go-stat-row"><span class="go-stat-label">Accuracy</span><span class="go-stat-val">${acc}%</span></div>
-    <div class="go-stat-row"><span class="go-stat-label">Best Streak</span><span class="go-stat-val">${state.bestStreak} 🔥</span></div>
+    <div class="go-stat-row"><span class="go-stat-label">Best Streak</span><span class="go-stat-val">${state.bestStreak}</span></div>
   `;
   showScene('gameover');
 }
